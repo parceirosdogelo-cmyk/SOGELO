@@ -27,7 +27,9 @@ import {
   Pencil,
   X,
   Sliders,
-  Percent
+  Percent,
+  ShoppingBag,
+  Award
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -49,10 +51,12 @@ import {
   Cliente,
   Produto,
   Pedido,
+  ItemPedido,
   FluxoCaixa,
   SUPABASE_SQL_SCRIPT,
   normalizePhone
 } from '../types';
+import VenderForm from './VenderForm';
 
 interface MasterDashboardProps {
   perfis: Perfil[];
@@ -64,10 +68,35 @@ interface MasterDashboardProps {
   produtos: Produto[];
   setProdutos: React.Dispatch<React.SetStateAction<Produto[]>>;
   pedidos: Pedido[];
+  setPedidos: React.Dispatch<React.SetStateAction<Pedido[]>>;
+  itensPedido: ItemPedido[];
+  setItensPedido: React.Dispatch<React.SetStateAction<ItemPedido[]>>;
   fluxoCaixa: FluxoCaixa[];
   setFluxoCaixa: React.Dispatch<React.SetStateAction<FluxoCaixa[]>>;
   isSocio?: boolean; // Sócio has restricted admin control (no user/employee management)
   currentUserName?: string;
+  aportes: Array<{
+    id: string;
+    socio: 'Mauro' | 'Wagner' | 'Marcos';
+    valor: number;
+    porcentagem: number;
+    data: string;
+    descricao: string;
+  }>;
+  setAportes: React.Dispatch<React.SetStateAction<Array<{
+    id: string;
+    socio: 'Mauro' | 'Wagner' | 'Marcos';
+    valor: number;
+    porcentagem: number;
+    data: string;
+    descricao: string;
+  }>>>;
+  mauroShare: number;
+  setMauroShare: React.Dispatch<React.SetStateAction<number>>;
+  wagnerShare: number;
+  setWagnerShare: React.Dispatch<React.SetStateAction<number>>;
+  marcosShare: number;
+  setMarcosShare: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function MasterDashboard({
@@ -80,34 +109,28 @@ export default function MasterDashboard({
   produtos,
   setProdutos,
   pedidos,
+  setPedidos,
+  itensPedido,
+  setItensPedido,
   fluxoCaixa,
   setFluxoCaixa,
   isSocio = false,
   currentUserName = '',
+  aportes,
+  setAportes,
+  mauroShare,
+  setMauroShare,
+  wagnerShare,
+  setWagnerShare,
+  marcosShare,
+  setMarcosShare,
 }: MasterDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'finance' | 'ai' | 'fleet' | 'products' | 'employees' | 'clients' | 'socios'>('finance');
+  const [activeTab, setActiveTab] = useState<'finance' | 'ai' | 'fleet' | 'products' | 'employees' | 'clients' | 'socios' | 'vender'>('finance');
+  const [preselectedVendedorId, setPreselectedVendedorId] = useState<string | undefined>(undefined);
 
   // Partners Fund & Contribution types and states
   // We define these types inline or use them in our states
   // Mauro, Wagner and Marcos are our partners
-  const [aportes, setAportes] = useState<Array<{
-    id: string;
-    socio: 'Mauro' | 'Wagner' | 'Marcos';
-    valor: number;
-    porcentagem: number;
-    data: string;
-    descricao: string;
-  }>>(() => {
-    const saved = localStorage.getItem('gelo_aportes_socios');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: 'ap-1', socio: 'Mauro', valor: 4000, porcentagem: 10, data: '2026-07-02', descricao: 'Aporte de 10% dos lucros previstos' },
-      { id: 'ap-2', socio: 'Wagner', valor: 6000, porcentagem: 15, data: '2026-07-03', descricao: 'Aporte de 15% dos lucros previstos' },
-      { id: 'ap-3', socio: 'Marcos', valor: 8000, porcentagem: 20, data: '2026-07-05', descricao: 'Aporte complementar de 20% dos lucros' },
-      { id: 'ap-4', socio: 'Mauro', valor: 5000, porcentagem: 12.5, data: '2026-06-15', descricao: 'Aporte mensal de lucros de Junho' },
-      { id: 'ap-5', socio: 'Wagner', valor: 4000, porcentagem: 10, data: '2026-06-18', descricao: 'Aporte complementar Junho' }
-    ];
-  });
 
   const [investimentosCaixa, setInvestimentosCaixa] = useState<Array<{
     id: string;
@@ -134,9 +157,6 @@ export default function MasterDashboard({
   });
 
   // State sync effects
-  React.useEffect(() => {
-    localStorage.setItem('gelo_aportes_socios', JSON.stringify(aportes));
-  }, [aportes]);
 
   React.useEffect(() => {
     localStorage.setItem('gelo_investimentos_caixa', JSON.stringify(investimentosCaixa));
@@ -187,25 +207,6 @@ export default function MasterDashboard({
   });
 
   const [editingProduct, setEditingProduct] = useState<Produto | null>(null);
-
-  const [mauroShare, setMauroShare] = useState<number>(() => {
-    const saved = localStorage.getItem('gelo_socio_share_mauro');
-    return saved ? parseFloat(saved) : 33.33;
-  });
-  const [wagnerShare, setWagnerShare] = useState<number>(() => {
-    const saved = localStorage.getItem('gelo_socio_share_wagner');
-    return saved ? parseFloat(saved) : 33.33;
-  });
-  const [marcosShare, setMarcosShare] = useState<number>(() => {
-    const saved = localStorage.getItem('gelo_socio_share_marcos');
-    return saved ? parseFloat(saved) : 33.34;
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem('gelo_socio_share_mauro', mauroShare.toString());
-    localStorage.setItem('gelo_socio_share_wagner', wagnerShare.toString());
-    localStorage.setItem('gelo_socio_share_marcos', marcosShare.toString());
-  }, [mauroShare, wagnerShare, marcosShare]);
 
   const [newEmployee, setNewEmployee] = useState({
     nome: '',
@@ -604,11 +605,24 @@ export default function MasterDashboard({
           Investimentos Frota
         </button>
         <button
-          onClick={() => setActiveTab('socios')}
+          onClick={() => {
+            setPreselectedVendedorId(undefined);
+            setActiveTab('socios');
+          }}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeTab === 'socios' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-xs' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
         >
           <Users className="h-4 w-4 text-emerald-400" />
           Socios
+        </button>
+        <button
+          onClick={() => {
+            setPreselectedVendedorId(undefined);
+            setActiveTab('vender');
+          }}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeTab === 'vender' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-xs' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+        >
+          <ShoppingBag className="h-4 w-4 text-sky-400" />
+          Lançar Venda
         </button>
         <button
           onClick={() => setActiveTab('products')}
@@ -1492,6 +1506,29 @@ export default function MasterDashboard({
         </div>
       )}
 
+      {/* TAB CONTENT: VENDER */}
+      {activeTab === 'vender' && (
+        <div className="animate-in fade-in duration-200">
+          <VenderForm
+            clientes={clientes}
+            setClientes={setClientes}
+            produtos={produtos}
+            setProdutos={setProdutos}
+            pedidos={pedidos}
+            setPedidos={setPedidos}
+            itensPedido={itensPedido}
+            setItensPedido={setItensPedido}
+            perfis={perfis}
+            currentUser={perfis.find(p => p.nome === currentUserName) || { id: isSocio ? 'socio-mauro' : 'master-wagner', nome: currentUserName, role: isSocio ? 'socio' : 'master', telefone: '' }}
+            preselectedVendedorId={preselectedVendedorId}
+            onSuccess={() => {
+              setPreselectedVendedorId(undefined);
+              setActiveTab('socios');
+            }}
+          />
+        </div>
+      )}
+
       {/* TAB CONTENT 8: SÓCIOS & APORTES */}
       {activeTab === 'socios' && (
         <div className="space-y-6 animate-in fade-in duration-200">
@@ -1800,6 +1837,25 @@ export default function MasterDashboard({
                           <p className="text-[9px] text-slate-500 leading-normal text-center">
                             Calculado: R$ {((socioShareVal * (parseFloat(percentInput) || 0)) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
+
+                          <div className="pt-2 border-t border-slate-800/60 mt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const profile = perfis.find(prof => prof.nome.toLowerCase().includes(p.name.toLowerCase()));
+                                if (profile) {
+                                  setPreselectedVendedorId(profile.id);
+                                } else {
+                                  setPreselectedVendedorId(p.name);
+                                }
+                                setActiveTab('vender');
+                              }}
+                              className="w-full bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-[10px] py-1.5 rounded-lg transition shadow-md shadow-sky-500/10 cursor-pointer flex items-center justify-center gap-1 uppercase tracking-wider"
+                            >
+                              <ShoppingBag className="h-3 w-3" />
+                              Registrar Venda ({p.name})
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -1969,6 +2025,172 @@ export default function MasterDashboard({
                             </div>
                           ))}
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* LEADERBOARD & HISTÓRICO DE VENDAS */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
+                  {/* Leaderboard Column */}
+                  <div className="lg:col-span-1 bg-elegant-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 shadow-sm">
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
+                        <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                          <Award className="h-5 w-5 text-amber-400" />
+                          Ranking de Vendas
+                        </h4>
+                        <span className="text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">
+                          Geral
+                        </span>
+                      </div>
+                      
+                      <p className="text-[11px] text-slate-400">Total acumulado e sacos/unidades faturados por cada sócio e vendedor.</p>
+
+                      <div className="space-y-3 pt-2">
+                        {(() => {
+                          // Calculate seller rankings
+                          const ranking = (() => {
+                            const statsMap: { [key: string]: { totalAmount: number; totalOrders: number; totalBags: number; role: string } } = {};
+                            
+                            // Initialize all system profiles so they appear in ranking even with 0 sales
+                            perfis.forEach(p => {
+                              statsMap[p.nome] = { totalAmount: 0, totalOrders: 0, totalBags: 0, role: p.role };
+                            });
+
+                            pedidos.forEach(p => {
+                              // Find seller profile
+                              const profile = perfis.find(prof => prof.id === p.vendedor_id || prof.nome === p.vendedor_id);
+                              const name = profile ? profile.nome : p.vendedor_id;
+                              const role = profile ? profile.role : 'vendedor';
+                              
+                              if (!statsMap[name]) {
+                                statsMap[name] = { totalAmount: 0, totalOrders: 0, totalBags: 0, role };
+                              }
+
+                              // Get total items/bags count for this order
+                              const orderItemsCount = itensPedido
+                                .filter(item => item.pedido_id === p.id)
+                                .reduce((sum, item) => sum + item.quantidade, 0);
+
+                              statsMap[name].totalAmount += p.valor_total;
+                              statsMap[name].totalOrders += 1;
+                              statsMap[name].totalBags += orderItemsCount;
+                            });
+
+                            return Object.entries(statsMap)
+                              .map(([nome, data]) => ({ nome, ...data }))
+                              .sort((a, b) => b.totalAmount - a.totalAmount);
+                          })();
+
+                          // Find maximum sold amount for scale percentage
+                          const maxAmount = Math.max(...ranking.map(r => r.totalAmount), 1);
+
+                          return ranking.map((item, index) => {
+                            const isSocioLabel = ['socio', 'master'].includes(item.role);
+                            const medalColor = index === 0 ? 'text-amber-400 bg-amber-500/10' : index === 1 ? 'text-slate-300 bg-slate-300/10' : index === 2 ? 'text-amber-600 bg-amber-600/10' : 'text-slate-500 bg-slate-800/50';
+                            
+                            return (
+                              <div key={item.nome} className="bg-[#0F1115] border border-slate-850 p-3 rounded-xl space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs ${medalColor}`}>
+                                      {index + 1}
+                                    </span>
+                                    <div>
+                                      <h5 className="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+                                        {item.nome}
+                                        {isSocioLabel && <span className="text-[8px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1 py-0.2 rounded-sm font-semibold uppercase">Sócio</span>}
+                                      </h5>
+                                      <p className="text-[9px] text-slate-500">{item.totalOrders} pedido(s) • {item.totalBags} un. gelo</p>
+                                    </div>
+                                  </div>
+                                  <span className="font-extrabold text-white text-xs">
+                                    R$ {item.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                
+                                {/* Progress bar */}
+                                <div className="w-full bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                                  <div 
+                                    className="bg-gradient-to-r from-sky-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+                                    style={{ width: `${(item.totalAmount / maxAmount) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sales History Column */}
+                  <div className="lg:col-span-2 bg-elegant-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 shadow-sm">
+                    <div className="space-y-3">
+                      <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
+                        <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                          <TrendingUp className="h-5 w-5 text-sky-400" />
+                          Histórico de Vendas Detalhado
+                        </h4>
+                        <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full font-bold">
+                          Faturamento por Canal
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-slate-400">Auditoria completa dos pedidos faturados no sistema de Rio das Ostras.</p>
+
+                      <div className="overflow-y-auto max-h-[380px] rounded-xl border border-slate-850">
+                        {pedidos.length > 0 ? (
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-[#0F1115] border-b border-slate-800/80 text-slate-500 font-bold">
+                                <th className="p-3">Data</th>
+                                <th className="p-3">Estabelecimento / Cliente</th>
+                                <th className="p-3">Vendedor / Sócio</th>
+                                <th className="p-3">Quantidade</th>
+                                <th className="p-3 text-right">Valor Total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-850/50 text-slate-300">
+                              {pedidos.map(p => {
+                                const cli = clientes.find(c => c.id === p.cliente_id);
+                                const profile = perfis.find(prof => prof.id === p.vendedor_id || prof.nome === p.vendedor_id);
+                                const name = profile ? profile.nome : p.vendedor_id;
+                                const totalBags = itensPedido
+                                  .filter(item => item.pedido_id === p.id)
+                                  .reduce((sum, item) => sum + item.quantidade, 0);
+
+                                return (
+                                  <tr key={p.id} className="hover:bg-slate-800/25">
+                                    <td className="p-3 font-mono text-[10px]">
+                                      {new Date(p.data_pedido).toLocaleDateString('pt-BR')} {new Date(p.data_pedido).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    </td>
+                                    <td className="p-3 font-semibold text-white">
+                                      {cli?.nome_estabelecimento || 'Estabelecimento Excluído'}
+                                    </td>
+                                    <td className="p-3">
+                                      <span className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                        {name}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 font-semibold text-slate-400">
+                                      {totalBags} un
+                                    </td>
+                                    <td className="p-3 text-right font-black text-emerald-400">
+                                      R$ {p.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div className="p-8 text-center text-slate-500 text-xs bg-[#0F1115]/50">
+                            Nenhuma venda faturada encontrada no sistema.
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

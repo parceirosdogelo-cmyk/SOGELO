@@ -30,6 +30,7 @@ interface VendedorDashboardProps {
   itensPedido: ItemPedido[];
   setItensPedido: React.Dispatch<React.SetStateAction<ItemPedido[]>>;
   perfis: Perfil[];
+  currentUser: Perfil;
 }
 
 export default function VendedorDashboard({
@@ -42,6 +43,7 @@ export default function VendedorDashboard({
   itensPedido,
   setItensPedido,
   perfis,
+  currentUser,
 }: VendedorDashboardProps) {
   const [vendedorTab, setVendedorTab] = useState<'orders' | 'new-order' | 'new-client' | 'routes'>('orders');
 
@@ -142,7 +144,7 @@ export default function VendedorDashboard({
     const newOrder: Pedido = {
       id: newOrderId,
       cliente_id: selectedClientId,
-      vendedor_id: 'vendedor-roberto', // Hardcoded for demo login
+      vendedor_id: currentUser?.id || 'vendedor-roberto',
       entregador_id: selectedEntregadorId || (entregadores[0]?.id || 'entregador-carlos'),
       data_pedido: new Date().toISOString(),
       valor_total: orderTotal,
@@ -401,15 +403,21 @@ export default function VendedorDashboard({
                             <button
                               type="button"
                               onClick={() => handleUpdateItemQty(item.produto_id, item.quantidade - 1)}
-                              className="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-sm font-bold text-center cursor-pointer select-none"
+                              className="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold text-center flex items-center justify-center cursor-pointer select-none border border-slate-700"
                             >
                               -
                             </button>
-                            <span className="font-bold w-6 text-center text-white">{item.quantidade}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.quantidade}
+                              onChange={(e) => handleUpdateItemQty(item.produto_id, parseInt(e.target.value) || 0)}
+                              className="w-12 bg-slate-900 border border-slate-800 rounded-lg py-1 px-1.5 text-xs text-center text-white font-bold font-mono focus:outline-none focus:border-sky-500"
+                            />
                             <button
                               type="button"
                               onClick={() => handleAddItemToOrder(item.produto_id)}
-                              className="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-sm font-bold text-center cursor-pointer select-none"
+                              className="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold text-center flex items-center justify-center cursor-pointer select-none border border-slate-700"
                             >
                               +
                             </button>

@@ -7,11 +7,96 @@ import express from 'express';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import {
+  MOCK_PERFIS,
+  MOCK_INVESTIMENTOS,
+  MOCK_CLIENTES,
+  MOCK_PRODUTOS,
+  MOCK_PEDIDOS,
+  MOCK_ITENS_PEDIDO,
+  MOCK_FLUXO_CAIXA
+} from './src/types';
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+
+const DB_FILE = path.join(process.cwd(), 'db.json');
+
+function readDb() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const data = fs.readFileSync(DB_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('Error reading DB file, using fallback defaults', err);
+  }
+
+  // Fallback defaults
+  const defaultDb = {
+    perfis: MOCK_PERFIS,
+    investimentos: MOCK_INVESTIMENTOS,
+    clientes: MOCK_CLIENTES,
+    produtos: MOCK_PRODUTOS,
+    pedidos: MOCK_PEDIDOS,
+    itensPedido: MOCK_ITENS_PEDIDO,
+    fluxoCaixa: MOCK_FLUXO_CAIXA,
+    aportes: [
+      { id: 'ap-1', socio: 'Mauro', valor: 4000, porcentagem: 10, data: '2026-07-02', descricao: 'Aporte de 10% dos lucros previstos' },
+      { id: 'ap-2', socio: 'Wagner', valor: 6000, porcentagem: 15, data: '2026-07-03', descricao: 'Aporte de 15% dos lucros previstos' },
+      { id: 'ap-3', socio: 'Marcos', valor: 8000, porcentagem: 20, data: '2026-07-05', descricao: 'Aporte complementar de 20% dos lucros' },
+      { id: 'ap-4', socio: 'Mauro', valor: 5000, porcentagem: 12.5, data: '2026-06-15', descricao: 'Aporte mensal de lucros de Junho' },
+      { id: 'ap-5', socio: 'Wagner', valor: 4000, porcentagem: 10, data: '2026-06-18', descricao: 'Aporte complementar Junho' }
+    ],
+    mauroShare: 33.33,
+    wagnerShare: 33.33,
+    marcosShare: 33.34
+  };
+
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(defaultDb, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing initial DB file:', err);
+  }
+
+  return defaultDb;
+}
+
+function writeDb(db: any) {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('Error writing DB file:', err);
+    return false;
+  }
+}
+
+// Data synchronization endpoints
+app.get('/api/sync-data', (req, res) => {
+  const db = readDb();
+  res.json({ success: true, db });
+});
+
+app.post('/api/sync-data', (req, res) => {
+  const { db } = req.body;
+  if (!db) {
+    return res.status(400).json({ error: 'Nenhum dado fornecido para sincronização.' });
+  }
+
+  const currentDb = readDb();
+  const updatedDb = { ...currentDb, ...db };
+  
+  const success = writeDb(updatedDb);
+  if (success) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ error: 'Erro ao gravar os dados no servidor.' });
+  }
+});
 
 const PORT = 3000;
 

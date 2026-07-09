@@ -12,25 +12,39 @@ import {
   Smartphone,
   Navigation,
   Clock,
-  Coins
+  Coins,
+  ShoppingBag
 } from 'lucide-react';
-import { Cliente, Pedido, Perfil } from '../types';
+import { Cliente, Pedido, Perfil, Produto, ItemPedido } from '../types';
 import MapRioOstras from './MapRioOstras';
+import VenderForm from './VenderForm';
 
 interface EntregadorDashboardProps {
   pedidos: Pedido[];
   setPedidos: React.Dispatch<React.SetStateAction<Pedido[]>>;
   clientes: Cliente[];
+  setClientes: React.Dispatch<React.SetStateAction<Cliente[]>>;
+  produtos: Produto[];
+  setProdutos: React.Dispatch<React.SetStateAction<Produto[]>>;
+  itensPedido: ItemPedido[];
+  setItensPedido: React.Dispatch<React.SetStateAction<ItemPedido[]>>;
   perfis: Perfil[];
+  currentUser: Perfil;
 }
 
 export default function EntregadorDashboard({
   pedidos,
   setPedidos,
   clientes,
+  setClientes,
+  produtos,
+  setProdutos,
+  itensPedido,
+  setItensPedido,
   perfis,
+  currentUser,
 }: EntregadorDashboardProps) {
-  const [entregadorTab, setEntregadorTab] = useState<'deliveries' | 'route'>('deliveries');
+  const [entregadorTab, setEntregadorTab] = useState<'deliveries' | 'route' | 'vender'>('deliveries');
   const [selectedPedidoId, setSelectedPedidoId] = useState<string | null>(null);
   
   // Payment option selector for delivery confirmation
@@ -108,6 +122,12 @@ export default function EntregadorDashboard({
           className={`flex-1 py-2 text-center text-xs font-bold rounded-lg cursor-pointer transition-all ${entregadorTab === 'route' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:text-slate-200'}`}
         >
           Minha Rota Ativa
+        </button>
+        <button
+          onClick={() => setEntregadorTab('vender')}
+          className={`flex-1 py-2 text-center text-xs font-bold rounded-lg cursor-pointer transition-all ${entregadorTab === 'vender' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          🛒 Vender / Novo Pedido
         </button>
       </div>
 
@@ -285,6 +305,27 @@ export default function EntregadorDashboard({
                 })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: VENDER */}
+      {entregadorTab === 'vender' && (
+        <div className="animate-in fade-in duration-200">
+          <VenderForm
+            clientes={clientes}
+            setClientes={setClientes}
+            produtos={produtos}
+            setProdutos={setProdutos}
+            pedidos={pedidos}
+            setPedidos={setPedidos}
+            itensPedido={itensPedido}
+            setItensPedido={setItensPedido}
+            perfis={perfis}
+            currentUser={currentUser}
+            onSuccess={() => {
+              setEntregadorTab('deliveries');
+            }}
+          />
         </div>
       )}
     </div>

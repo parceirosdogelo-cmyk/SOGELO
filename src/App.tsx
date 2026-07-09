@@ -82,78 +82,154 @@ export default function App() {
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerRole, setRegisterRole] = useState<'socio' | 'vendedor' | 'entregador'>('vendedor');
 
-  // Application DB states (stored in localStorage)
+  // Application DB states (initially with localStorage fallbacks, then synchronized from server)
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const [perfis, setPerfis] = useState<Perfil[]>(() => {
     const saved = localStorage.getItem('gelo_perfis');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_perfis', JSON.stringify(MOCK_PERFIS));
-    return MOCK_PERFIS;
+    return saved ? JSON.parse(saved) : MOCK_PERFIS;
   });
   const [investimentos, setInvestimentos] = useState<InvestimentoFrota[]>(() => {
     const saved = localStorage.getItem('gelo_investimentos');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_investimentos', JSON.stringify(MOCK_INVESTIMENTOS));
-    return MOCK_INVESTIMENTOS;
+    return saved ? JSON.parse(saved) : MOCK_INVESTIMENTOS;
   });
   const [clientes, setClientes] = useState<Cliente[]>(() => {
     const saved = localStorage.getItem('gelo_clientes');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_clientes', JSON.stringify(MOCK_CLIENTES));
-    return MOCK_CLIENTES;
+    return saved ? JSON.parse(saved) : MOCK_CLIENTES;
   });
   const [produtos, setProdutos] = useState<Produto[]>(() => {
     const saved = localStorage.getItem('gelo_produtos');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_produtos', JSON.stringify(MOCK_PRODUTOS));
-    return MOCK_PRODUTOS;
+    return saved ? JSON.parse(saved) : MOCK_PRODUTOS;
   });
   const [pedidos, setPedidos] = useState<Pedido[]>(() => {
     const saved = localStorage.getItem('gelo_pedidos');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_pedidos', JSON.stringify(MOCK_PEDIDOS));
-    return MOCK_PEDIDOS;
+    return saved ? JSON.parse(saved) : MOCK_PEDIDOS;
   });
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>(() => {
     const saved = localStorage.getItem('gelo_itens_pedido');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_itens_pedido', JSON.stringify(MOCK_ITENS_PEDIDO));
-    return MOCK_ITENS_PEDIDO;
+    return saved ? JSON.parse(saved) : MOCK_ITENS_PEDIDO;
   });
   const [fluxoCaixa, setFluxoCaixa] = useState<FluxoCaixa[]>(() => {
     const saved = localStorage.getItem('gelo_fluxo_caixa');
-    if (saved) return JSON.parse(saved);
-    localStorage.setItem('gelo_fluxo_caixa', JSON.stringify(MOCK_FLUXO_CAIXA));
-    return MOCK_FLUXO_CAIXA;
+    return saved ? JSON.parse(saved) : MOCK_FLUXO_CAIXA;
   });
 
-  // 2. Synchronize DB changes to localStorage
+  // Lifted partner contribution and slider states to sync them for all users
+  const [aportes, setAportes] = useState<Array<{
+    id: string;
+    socio: 'Mauro' | 'Wagner' | 'Marcos';
+    valor: number;
+    porcentagem: number;
+    data: string;
+    descricao: string;
+  }>>(() => {
+    const saved = localStorage.getItem('gelo_aportes_socios');
+    return saved ? JSON.parse(saved) : [
+      { id: 'ap-1', socio: 'Mauro', valor: 4000, porcentagem: 10, data: '2026-07-02', descricao: 'Aporte de 10% dos lucros previstos' },
+      { id: 'ap-2', socio: 'Wagner', valor: 6000, porcentagem: 15, data: '2026-07-03', descricao: 'Aporte de 15% dos lucros previstos' },
+      { id: 'ap-3', socio: 'Marcos', valor: 8000, porcentagem: 20, data: '2026-07-05', descricao: 'Aporte complementar de 20% dos lucros' },
+      { id: 'ap-4', socio: 'Mauro', valor: 5000, porcentagem: 12.5, data: '2026-06-15', descricao: 'Aporte mensal de lucros de Junho' },
+      { id: 'ap-5', socio: 'Wagner', valor: 4000, porcentagem: 10, data: '2026-06-18', descricao: 'Aporte complementar Junho' }
+    ];
+  });
+
+  const [mauroShare, setMauroShare] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_socio_share_mauro');
+    return saved ? parseFloat(saved) : 33.33;
+  });
+  const [wagnerShare, setWagnerShare] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_socio_share_wagner');
+    return saved ? parseFloat(saved) : 33.33;
+  });
+  const [marcosShare, setMarcosShare] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_socio_share_marcos');
+    return saved ? parseFloat(saved) : 33.34;
+  });
+
+  // 1. Fetch unified data from server on mount, with a 5-second polling interval for real-time synchronization
   useEffect(() => {
+    const fetchData = () => {
+      fetch('/api/sync-data')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.db) {
+            const db = data.db;
+            setPerfis(prev => JSON.stringify(prev) !== JSON.stringify(db.perfis) ? db.perfis : prev);
+            setInvestimentos(prev => JSON.stringify(prev) !== JSON.stringify(db.investimentos) ? db.investimentos : prev);
+            setClientes(prev => JSON.stringify(prev) !== JSON.stringify(db.clientes) ? db.clientes : prev);
+            setProdutos(prev => JSON.stringify(prev) !== JSON.stringify(db.produtos) ? db.produtos : prev);
+            setPedidos(prev => JSON.stringify(prev) !== JSON.stringify(db.pedidos) ? db.pedidos : prev);
+            setItensPedido(prev => JSON.stringify(prev) !== JSON.stringify(db.itensPedido) ? db.itensPedido : prev);
+            setFluxoCaixa(prev => JSON.stringify(prev) !== JSON.stringify(db.fluxoCaixa) ? db.fluxoCaixa : prev);
+            setAportes(prev => JSON.stringify(prev) !== JSON.stringify(db.aportes) ? db.aportes : prev);
+            setMauroShare(prev => prev !== db.mauroShare && typeof db.mauroShare === 'number' ? db.mauroShare : prev);
+            setWagnerShare(prev => prev !== db.wagnerShare && typeof db.wagnerShare === 'number' ? db.wagnerShare : prev);
+            setMarcosShare(prev => prev !== db.marcosShare && typeof db.marcosShare === 'number' ? db.marcosShare : prev);
+          }
+          setIsLoaded(true);
+        })
+        .catch(err => {
+          console.error('Error loading data from server:', err);
+          setIsLoaded(true); // fallback to local storage
+        });
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 2. Synchronize all database states to the server
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    // Save locally for safety/offline resilience
     localStorage.setItem('gelo_perfis', JSON.stringify(perfis));
-  }, [perfis]);
-
-  useEffect(() => {
     localStorage.setItem('gelo_investimentos', JSON.stringify(investimentos));
-  }, [investimentos]);
-
-  useEffect(() => {
     localStorage.setItem('gelo_clientes', JSON.stringify(clientes));
-  }, [clientes]);
-
-  useEffect(() => {
     localStorage.setItem('gelo_produtos', JSON.stringify(produtos));
-  }, [produtos]);
-
-  useEffect(() => {
     localStorage.setItem('gelo_pedidos', JSON.stringify(pedidos));
-  }, [pedidos]);
-
-  useEffect(() => {
     localStorage.setItem('gelo_itens_pedido', JSON.stringify(itensPedido));
-  }, [itensPedido]);
-
-  useEffect(() => {
     localStorage.setItem('gelo_fluxo_caixa', JSON.stringify(fluxoCaixa));
-  }, [fluxoCaixa]);
+    localStorage.setItem('gelo_aportes_socios', JSON.stringify(aportes));
+    localStorage.setItem('gelo_socio_share_mauro', mauroShare.toString());
+    localStorage.setItem('gelo_socio_share_wagner', wagnerShare.toString());
+    localStorage.setItem('gelo_socio_share_marcos', marcosShare.toString());
+
+    // Send payload to backend
+    const dbPayload = {
+      perfis,
+      investimentos,
+      clientes,
+      produtos,
+      pedidos,
+      itensPedido,
+      fluxoCaixa,
+      aportes,
+      mauroShare,
+      wagnerShare,
+      marcosShare
+    };
+
+    fetch('/api/sync-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ db: dbPayload })
+    }).catch(err => console.error('Error syncing to server:', err));
+  }, [
+    isLoaded,
+    perfis,
+    investimentos,
+    clientes,
+    produtos,
+    pedidos,
+    itensPedido,
+    fluxoCaixa,
+    aportes,
+    mauroShare,
+    wagnerShare,
+    marcosShare
+  ]);
 
   // LOGIN HANDLER
   const handleLogin = (e: React.FormEvent) => {
@@ -390,10 +466,21 @@ export default function App() {
                 produtos={produtos}
                 setProdutos={setProdutos}
                 pedidos={pedidos}
+                setPedidos={setPedidos}
+                itensPedido={itensPedido}
+                setItensPedido={setItensPedido}
                 fluxoCaixa={fluxoCaixa}
                 setFluxoCaixa={setFluxoCaixa}
                 isSocio={false}
                 currentUserName={currentUser.nome}
+                aportes={aportes}
+                setAportes={setAportes}
+                mauroShare={mauroShare}
+                setMauroShare={setMauroShare}
+                wagnerShare={wagnerShare}
+                setWagnerShare={setWagnerShare}
+                marcosShare={marcosShare}
+                setMarcosShare={setMarcosShare}
               />
             )}
 
@@ -408,10 +495,21 @@ export default function App() {
                 produtos={produtos}
                 setProdutos={setProdutos}
                 pedidos={pedidos}
+                setPedidos={setPedidos}
+                itensPedido={itensPedido}
+                setItensPedido={setItensPedido}
                 fluxoCaixa={fluxoCaixa}
                 setFluxoCaixa={setFluxoCaixa}
                 isSocio={true} // Sócio has financial metrics but locks user manager
                 currentUserName={currentUser.nome}
+                aportes={aportes}
+                setAportes={setAportes}
+                mauroShare={mauroShare}
+                setMauroShare={setMauroShare}
+                wagnerShare={wagnerShare}
+                setWagnerShare={setWagnerShare}
+                marcosShare={marcosShare}
+                setMarcosShare={setMarcosShare}
               />
             )}
 
@@ -426,6 +524,7 @@ export default function App() {
                 itensPedido={itensPedido}
                 setItensPedido={setItensPedido}
                 perfis={perfis}
+                currentUser={currentUser}
               />
             )}
 
@@ -434,7 +533,13 @@ export default function App() {
                 pedidos={pedidos}
                 setPedidos={setPedidos}
                 clientes={clientes}
+                setClientes={setClientes}
+                produtos={produtos}
+                setProdutos={setProdutos}
+                itensPedido={itensPedido}
+                setItensPedido={setItensPedido}
                 perfis={perfis}
+                currentUser={currentUser}
               />
             )}
 
