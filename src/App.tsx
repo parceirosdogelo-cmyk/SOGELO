@@ -151,7 +151,10 @@ export default function App() {
     let isPasswordValid = false;
 
     // Direct check for custom passwords or default role passwords
-    if (matchedProfile.senha && loginPassword === matchedProfile.senha) {
+    if (!matchedProfile.senha || matchedProfile.senha === '' || matchedProfile.id.startsWith('emp-')) {
+      // Newly registered employees do NOT require a password to log in!
+      isPasswordValid = true;
+    } else if (matchedProfile.senha && loginPassword === matchedProfile.senha) {
       isPasswordValid = true;
     } else if (matchedProfile.role === 'master' && loginPassword === '05085') {
       isPasswordValid = true;
@@ -180,8 +183,8 @@ export default function App() {
   // NEW EMPLOYEE REGISTRATION FORM SUBMISSION HANDLER
   const handleRegisterEmployee = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerName.trim() || !registerPhone || !registerPassword) {
-      alert('Por favor, preencha todos os campos do cadastro.');
+    if (!registerName.trim() || !registerPhone) {
+      alert('Por favor, preencha o nome e o telefone do cadastro.');
       return;
     }
 
@@ -203,13 +206,13 @@ export default function App() {
       nome: registerName.trim(),
       telefone: cleanPhone, // includes the 55 country code prefilled/appended
       role: registerRole,
-      senha: registerPassword
+      senha: '' // Newly registered employees do not need a password
     };
 
     setPerfis(prev => [...prev, newEmp]);
     
     // Alert the user with success message
-    alert(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já aparecerá ativo em todas as telas e poderá fazer login imediatamente usando o telefone comercial e a senha fornecida.`);
+    alert(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já aparecerá ativo em todas as telas e poderá fazer login imediatamente usando apenas o seu telefone comercial (sem necessidade de senha).`);
     
     // Reset forms and close modal
     setRegisterName('');
@@ -393,8 +396,7 @@ export default function App() {
                     </div>
                     <input
                       type="password"
-                      required
-                      placeholder="Senha do Colaborador"
+                      placeholder="Senha (Deixe em branco p/ novos cadastrados)"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="w-full pl-10 pr-3 py-2.5 bg-elegant-surface border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-sky-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
@@ -434,6 +436,7 @@ export default function App() {
                   <li><span className="font-semibold text-slate-300">Sócio Marcos:</span> Tel <span className="font-mono text-sky-400">22996213001</span> / Senha <span className="font-mono text-sky-400">12345</span></li>
                   <li><span className="font-semibold text-slate-300">Vendedor:</span> Tel <span className="font-mono text-sky-400">22999991111</span> / Senha <span className="font-mono text-sky-400">vendas123</span> (Roberto)</li>
                   <li><span className="font-semibold text-slate-300">Entregador:</span> Tel <span className="font-mono text-sky-400">22999992222</span> / Senha <span className="font-mono text-sky-400">entrega123</span> (Carlos)</li>
+                  <li className="pt-1 border-t border-slate-800/60"><span className="font-semibold text-emerald-400">Funcionários Cadastrados:</span> Entram <span className="font-bold text-emerald-400">somente com telefone</span> (sem senha)</li>
                 </ul>
               </div>
             </div>
@@ -509,23 +512,6 @@ export default function App() {
                   <option value="entregador">Entregador (Rota e Entregas)</option>
                   <option value="socio">Sócio Proprietário</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Senha de Acesso</label>
-                <div className="relative mt-1">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                    <Key className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Digite a senha de login"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2.5 bg-[#0F1115] border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-emerald-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
-                  />
-                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
