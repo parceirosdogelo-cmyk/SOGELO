@@ -393,6 +393,7 @@ export default function App() {
                 fluxoCaixa={fluxoCaixa}
                 setFluxoCaixa={setFluxoCaixa}
                 isSocio={false}
+                currentUserName={currentUser.nome}
               />
             )}
 
@@ -410,6 +411,7 @@ export default function App() {
                 fluxoCaixa={fluxoCaixa}
                 setFluxoCaixa={setFluxoCaixa}
                 isSocio={true} // Sócio has financial metrics but locks user manager
+                currentUserName={currentUser.nome}
               />
             )}
 

@@ -63,6 +63,7 @@ interface MasterDashboardProps {
   fluxoCaixa: FluxoCaixa[];
   setFluxoCaixa: React.Dispatch<React.SetStateAction<FluxoCaixa[]>>;
   isSocio?: boolean; // Sócio has restricted admin control (no user/employee management)
+  currentUserName?: string;
 }
 
 export default function MasterDashboard({
@@ -78,8 +79,9 @@ export default function MasterDashboard({
   fluxoCaixa,
   setFluxoCaixa,
   isSocio = false,
+  currentUserName = '',
 }: MasterDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'finance' | 'ai' | 'fleet' | 'products' | 'employees' | 'clients' | 'supabase' | 'socios'>('finance');
+  const [activeTab, setActiveTab] = useState<'finance' | 'ai' | 'fleet' | 'products' | 'employees' | 'clients' | 'socios'>('finance');
 
   // Partners Fund & Contribution types and states
   // We define these types inline or use them in our states
@@ -459,7 +461,7 @@ export default function MasterDashboard({
               {isSocio ? 'Painel de Sócio' : 'Painel Master'}
             </span>
             <h2 className="text-2xl font-bold mt-1 text-white">
-              {isSocio ? 'Olá Sócio, Mauro & Marcos' : 'Olá, Wagner Teixeira'}
+              {isSocio ? `Olá Sócio, ${currentUserName || 'Sócio'}` : `Olá, ${currentUserName || 'Wagner Teixeira'}`}
             </h2>
             <p className="text-slate-400 text-xs">Gestão operacional da Distribuidora de Gelo em Rio das Ostras - RJ</p>
           </div>
@@ -563,13 +565,6 @@ export default function MasterDashboard({
         >
           <Building className="h-4 w-4 text-rose-400" />
           Clientes
-        </button>
-        <button
-          onClick={() => setActiveTab('supabase')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeTab === 'supabase' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20 shadow-xs' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
-        >
-          <Database className="h-4 w-4 text-sky-400" />
-          Supabase SQL Editor
         </button>
       </div>
 
@@ -1161,8 +1156,14 @@ export default function MasterDashboard({
                         <td className="py-3 text-right">
                           {p.role !== 'master' ? (
                             <button
-                              onClick={() => setPerfis(prev => prev.filter(item => item.id !== p.id))}
+                              onClick={() => {
+                                if (window.confirm(`Tem certeza de que deseja excluir o funcionário ${p.nome}? Todas as informações serão removidas e o telefone (${p.telefone}) poderá ser cadastrado novamente sem dar erro.`)) {
+                                  setPerfis(prev => prev.filter(item => item.id !== p.id));
+                                  alert('Funcionário excluído com sucesso do banco de dados!');
+                                }
+                              }}
                               className="text-rose-500 hover:text-rose-400 cursor-pointer"
+                              title="Excluir Funcionário"
                             >
                               <Trash2 className="h-4 w-4 inline-block" />
                             </button>
@@ -1904,73 +1905,6 @@ export default function MasterDashboard({
         </div>
       )}
 
-      {/* TAB CONTENT 7: SUPABASE SQL EDITOR & SECURITY RULES */}
-      {activeTab === 'supabase' && (
-        <div className="space-y-6">
-          <div className="bg-elegant-card p-6 rounded-2xl border border-slate-800 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="font-extrabold text-white text-base flex items-center gap-2">
-                  <Database className="h-5 w-5 text-sky-400 animate-pulse" />
-                  Script SQL de Inicialização do Supabase
-                </h3>
-                <p className="text-xs text-slate-400">Gere tabelas, relacionamentos e políticas rígidas de Row Level Security (RLS) diretamente no Supabase.</p>
-              </div>
-              <button
-                onClick={copySqlToClipboard}
-                className="flex items-center gap-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 text-xs font-bold py-2 px-4 rounded-xl transition-all cursor-pointer shadow-xs self-start"
-              >
-                {sqlCopied ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 text-emerald-400" />
-                    Copiado!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    Copiar Script Completo
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Security Explanation Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#0F1115] border border-slate-800 p-4 rounded-xl space-y-2">
-                <h4 className="font-bold text-xs text-white flex items-center gap-1.5">
-                  <Shield className="h-4 w-4 text-emerald-400" />
-                  Segurança RLS (Row Level Security) Rígida
-                </h4>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Toda a segurança de dados é delegada ao banco de dados Supabase. Nenhuma query SQL crua ou lógica de validação sensível roda no cliente (Vercel).
-                  Com a política RLS ativa, tabelas financeiras como <span className="font-mono bg-slate-800 border border-slate-700/50 text-sky-300 px-1 py-0.5 rounded-sm">fluxo_caixa</span> e <span className="font-mono bg-slate-800 border border-slate-700/50 text-sky-300 px-1 py-0.5 rounded-sm">investimentos_frota</span> retornam <strong>vazio ou Acesso Negado</strong> automaticamente no momento do fetch caso a permissão do usuário logado não seja 'master' ou 'socio'.
-                </p>
-              </div>
-
-              <div className="bg-[#0F1115] border border-slate-800 p-4 rounded-xl space-y-2">
-                <h4 className="font-bold text-xs text-white flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-sky-400" />
-                  Isolamento de Vendedores e Entregadores
-                </h4>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  As políticas criadas no script garantem que o papel 'vendedor' consiga ler e escrever livremente apenas em <span className="font-mono bg-slate-800 border border-slate-700/50 text-sky-300 px-1 py-0.5 rounded-sm">pedidos</span>, <span className="font-mono bg-slate-800 border border-slate-700/50 text-sky-300 px-1 py-0.5 rounded-sm">itens_pedido</span> e <span className="font-mono bg-slate-800 border border-slate-700/50 text-sky-300 px-1 py-0.5 rounded-sm">clientes</span>.
-                  Os entregadores têm acesso apenas para atualizar os estados de entrega e registrar o meio de pagamento (<span className="font-mono bg-slate-800 border border-slate-700/50 text-sky-300 px-1 py-0.5 rounded-sm">forma_pagamento</span>), impedindo de forma absoluta vazamento de dados de margens ou custos de fabricação de gelo de Rio das Ostras.
-                </p>
-              </div>
-            </div>
-
-            {/* SQL Code Box */}
-            <div className="relative">
-              <pre className="bg-[#0F1115] text-sky-300 p-4 rounded-2xl font-mono text-[10px] overflow-x-auto max-h-[400px] border border-slate-800 shadow-inner">
-                {SUPABASE_SQL_SCRIPT}
-              </pre>
-              <div className="absolute bottom-2 right-2 bg-slate-800/80 backdrop-blur-xs py-1 px-3 rounded-md text-[10px] text-slate-400 font-semibold border border-slate-800 pointer-events-none select-none">
-                PostgreSQL Dialect
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
