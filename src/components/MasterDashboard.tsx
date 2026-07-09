@@ -23,7 +23,9 @@ import {
   Copy,
   CheckCircle,
   Database,
-  Building
+  Building,
+  Pencil,
+  X
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -197,6 +199,9 @@ export default function MasterDashboard({
     longitude: -41.9400
   });
 
+  const [editingTransaction, setEditingTransaction] = useState<FluxoCaixa | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<InvestimentoFrota | null>(null);
+
   // AI Forecast parameters
   const [forecastParams, setForecastParams] = useState({
     temperature: 31,
@@ -368,6 +373,32 @@ export default function MasterDashboard({
       proprietario: 'Wagner',
       data_aquisicao: new Date().toISOString().split('T')[0]
     });
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    if (window.confirm('Tem certeza de que deseja excluir este lançamento do fluxo de caixa?')) {
+      setFluxoCaixa(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleDeleteVehicle = (id: string) => {
+    if (window.confirm('Tem certeza de que deseja excluir este veículo da frota?')) {
+      setInvestimentos(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleUpdateTransaction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTransaction) return;
+    setFluxoCaixa(prev => prev.map(item => item.id === editingTransaction.id ? editingTransaction : item));
+    setEditingTransaction(null);
+  };
+
+  const handleUpdateVehicle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVehicle) return;
+    setInvestimentos(prev => prev.map(item => item.id === editingVehicle.id ? editingVehicle : item));
+    setEditingVehicle(null);
   };
 
   const handleAddProduct = (e: React.FormEvent) => {
@@ -611,6 +642,7 @@ export default function MasterDashboard({
                       <th className="pb-3">Categoria</th>
                       <th className="pb-3">Data</th>
                       <th className="pb-3 text-right">Valor</th>
+                      <th className="pb-3 text-right w-20">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50 text-xs text-slate-300">
@@ -625,6 +657,22 @@ export default function MasterDashboard({
                         <td className="py-2.5">{t.data.split('-').reverse().join('/')}</td>
                         <td className={`py-2.5 text-right font-bold ${t.tipo === 'entrada' ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2.5 text-right space-x-1 whitespace-nowrap">
+                          <button
+                            onClick={() => setEditingTransaction(t)}
+                            className="text-sky-400 hover:text-sky-300 transition-all cursor-pointer p-1.5 hover:bg-sky-500/10 rounded inline-flex items-center justify-center"
+                            title="Editar lançamento"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTransaction(t.id)}
+                            className="text-rose-500 hover:text-rose-400 transition-all cursor-pointer p-1.5 hover:bg-rose-500/10 rounded inline-flex items-center justify-center"
+                            title="Excluir lançamento"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -918,6 +966,7 @@ export default function MasterDashboard({
                       <th className="pb-3">Sócio Proprietário</th>
                       <th className="pb-3">Data Aquisição</th>
                       <th className="pb-3 text-right">Valor Estimado</th>
+                      <th className="pb-3 text-right w-20">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50 text-xs text-slate-300">
@@ -931,6 +980,22 @@ export default function MasterDashboard({
                         <td className="py-3">{v.data_aquisicao.split('-').reverse().join('/')}</td>
                         <td className="py-3 text-right font-bold text-white">
                           R$ {v.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 text-right space-x-1 whitespace-nowrap">
+                          <button
+                            onClick={() => setEditingVehicle(v)}
+                            className="text-sky-400 hover:text-sky-300 transition-all cursor-pointer p-1.5 hover:bg-sky-500/10 rounded inline-flex items-center justify-center"
+                            title="Editar veículo"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteVehicle(v.id)}
+                            className="text-rose-500 hover:text-rose-400 transition-all cursor-pointer p-1.5 hover:bg-rose-500/10 rounded inline-flex items-center justify-center"
+                            title="Excluir veículo"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1902,6 +1967,211 @@ export default function MasterDashboard({
               </>
             );
           })()}
+        </div>
+      )}
+
+      {/* MODAL: EDIT TRANSACTION */}
+      {editingTransaction && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-xs">
+          <div className="bg-elegant-card border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button
+              onClick={() => setEditingTransaction(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-sky-400" />
+              Editar Lançamento
+            </h3>
+
+            <form onSubmit={handleUpdateTransaction} className="space-y-4 text-left">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingTransaction(prev => prev ? ({ ...prev, tipo: 'entrada', categoria: 'venda_gelo' }) : null)}
+                    className={`py-1.5 text-center text-xs font-semibold rounded-lg border cursor-pointer transition ${editingTransaction.tipo === 'entrada' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-elegant-surface text-slate-400 border-slate-800 hover:text-slate-200'}`}
+                  >
+                    Receita (Entrada)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTransaction(prev => prev ? ({ ...prev, tipo: 'despesa', categoria: 'combustível' }) : null)}
+                    className={`py-1.5 text-center text-xs font-semibold rounded-lg border cursor-pointer transition ${editingTransaction.tipo === 'despesa' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-elegant-surface text-slate-400 border-slate-800 hover:text-slate-200'}`}
+                  >
+                    Despesa (Saída)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Categoria</label>
+                <select
+                  value={editingTransaction.categoria}
+                  onChange={(e) => setEditingTransaction(prev => prev ? ({ ...prev, categoria: e.target.value as any }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                >
+                  {editingTransaction.tipo === 'entrada' ? (
+                    <>
+                      <option value="venda_gelo">Venda de Gelo</option>
+                      <option value="outro">Aporte / Outro</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="combustível">Combustível (Iveco/Fiorino)</option>
+                      <option value="manutenção">Manutenção Frota</option>
+                      <option value="embalagem">Embalagens plásticas</option>
+                      <option value="energia">Energia Elétrica (Fábrica)</option>
+                      <option value="pessoal">Mão de Obra / Pessoal</option>
+                      <option value="outro">Outro</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Valor (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={editingTransaction.valor || ''}
+                  onChange={(e) => setEditingTransaction(prev => prev ? ({ ...prev, valor: parseFloat(e.target.value) || 0 }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Data</label>
+                <input
+                  type="date"
+                  required
+                  value={editingTransaction.data}
+                  onChange={(e) => setEditingTransaction(prev => prev ? ({ ...prev, data: e.target.value }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Descrição</label>
+                <input
+                  type="text"
+                  value={editingTransaction.descricao}
+                  onChange={(e) => setEditingTransaction(prev => prev ? ({ ...prev, descricao: e.target.value }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingTransaction(null)}
+                  className="w-1/2 border border-slate-800 text-slate-400 hover:text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT VEHICLE */}
+      {editingVehicle && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-xs">
+          <div className="bg-elegant-card border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button
+              onClick={() => setEditingVehicle(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-sky-400" />
+              Editar Veículo de Frota
+            </h3>
+
+            <form onSubmit={handleUpdateVehicle} className="space-y-4 text-left">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Modelo do Veículo</label>
+                <input
+                  type="text"
+                  required
+                  value={editingVehicle.veiculo}
+                  onChange={(e) => setEditingVehicle(prev => prev ? ({ ...prev, veiculo: e.target.value }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Valor Estimado (R$)</label>
+                <input
+                  type="number"
+                  required
+                  value={editingVehicle.valor || ''}
+                  onChange={(e) => setEditingVehicle(prev => prev ? ({ ...prev, valor: parseFloat(e.target.value) || 0 }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Sócio Proprietário</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingVehicle(prev => prev ? ({ ...prev, proprietario: 'Wagner' }) : null)}
+                    className={`py-1.5 text-center text-xs font-semibold rounded-lg border cursor-pointer transition ${editingVehicle.proprietario === 'Wagner' ? 'bg-sky-500/10 border-sky-500/20 text-sky-400' : 'bg-[#0F1115] border-slate-800 text-slate-400 hover:text-slate-200'}`}
+                  >
+                    Wagner
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingVehicle(prev => prev ? ({ ...prev, proprietario: 'Mauro' }) : null)}
+                    className={`py-1.5 text-center text-xs font-semibold rounded-lg border cursor-pointer transition ${editingVehicle.proprietario === 'Mauro' ? 'bg-sky-500/10 border-sky-500/20 text-sky-400' : 'bg-[#0F1115] border-slate-800 text-slate-400 hover:text-slate-200'}`}
+                  >
+                    Mauro
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Data de Aquisição</label>
+                <input
+                  type="date"
+                  required
+                  value={editingVehicle.data_aquisicao}
+                  onChange={(e) => setEditingVehicle(prev => prev ? ({ ...prev, data_aquisicao: e.target.value }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingVehicle(null)}
+                  className="w-1/2 border border-slate-800 text-slate-400 hover:text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
