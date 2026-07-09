@@ -22,6 +22,7 @@ import {
 
 import {
   Perfil,
+  UserRole,
   InvestimentoFrota,
   Cliente,
   Produto,
@@ -34,7 +35,8 @@ import {
   MOCK_PRODUTOS,
   MOCK_PEDIDOS,
   MOCK_ITENS_PEDIDO,
-  MOCK_FLUXO_CAIXA
+  MOCK_FLUXO_CAIXA,
+  normalizePhone
 } from './types';
 
 import MasterDashboard from './components/MasterDashboard';
@@ -48,6 +50,27 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [activeRole, setActiveRole] = useState<UserRole | null>(() => {
+    const saved = localStorage.getItem('gelo_usuario_logado');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.role;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (currentUser) {
+      setActiveRole(currentUser.role);
+    } else {
+      setActiveRole(null);
+    }
+  }, [currentUser]);
+
   const [loginPhone, setLoginPhone] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -60,59 +83,76 @@ export default function App() {
   const [registerRole, setRegisterRole] = useState<'socio' | 'vendedor' | 'entregador'>('vendedor');
 
   // Application DB states (stored in localStorage)
-  const [perfis, setPerfis] = useState<Perfil[]>([]);
-  const [investimentos, setInvestimentos] = useState<InvestimentoFrota[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
-  const [fluxoCaixa, setFluxoCaixa] = useState<FluxoCaixa[]>([]);
-
-  // 1. Initialise localStorage database with our robust mock data
-  useEffect(() => {
-    const initStorage = <T,>(key: string, defaultVal: T): T => {
-      const saved = localStorage.getItem(key);
-      if (saved) return JSON.parse(saved);
-      localStorage.setItem(key, JSON.stringify(defaultVal));
-      return defaultVal;
-    };
-
-    setPerfis(initStorage('gelo_perfis', MOCK_PERFIS));
-    setInvestimentos(initStorage('gelo_investimentos', MOCK_INVESTIMENTOS));
-    setClientes(initStorage('gelo_clientes', MOCK_CLIENTES));
-    setProdutos(initStorage('gelo_produtos', MOCK_PRODUTOS));
-    setPedidos(initStorage('gelo_pedidos', MOCK_PEDIDOS));
-    setItensPedido(initStorage('gelo_itens_pedido', MOCK_ITENS_PEDIDO));
-    setFluxoCaixa(initStorage('gelo_fluxo_caixa', MOCK_FLUXO_CAIXA));
-  }, []);
+  const [perfis, setPerfis] = useState<Perfil[]>(() => {
+    const saved = localStorage.getItem('gelo_perfis');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_perfis', JSON.stringify(MOCK_PERFIS));
+    return MOCK_PERFIS;
+  });
+  const [investimentos, setInvestimentos] = useState<InvestimentoFrota[]>(() => {
+    const saved = localStorage.getItem('gelo_investimentos');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_investimentos', JSON.stringify(MOCK_INVESTIMENTOS));
+    return MOCK_INVESTIMENTOS;
+  });
+  const [clientes, setClientes] = useState<Cliente[]>(() => {
+    const saved = localStorage.getItem('gelo_clientes');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_clientes', JSON.stringify(MOCK_CLIENTES));
+    return MOCK_CLIENTES;
+  });
+  const [produtos, setProdutos] = useState<Produto[]>(() => {
+    const saved = localStorage.getItem('gelo_produtos');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_produtos', JSON.stringify(MOCK_PRODUTOS));
+    return MOCK_PRODUTOS;
+  });
+  const [pedidos, setPedidos] = useState<Pedido[]>(() => {
+    const saved = localStorage.getItem('gelo_pedidos');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_pedidos', JSON.stringify(MOCK_PEDIDOS));
+    return MOCK_PEDIDOS;
+  });
+  const [itensPedido, setItensPedido] = useState<ItemPedido[]>(() => {
+    const saved = localStorage.getItem('gelo_itens_pedido');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_itens_pedido', JSON.stringify(MOCK_ITENS_PEDIDO));
+    return MOCK_ITENS_PEDIDO;
+  });
+  const [fluxoCaixa, setFluxoCaixa] = useState<FluxoCaixa[]>(() => {
+    const saved = localStorage.getItem('gelo_fluxo_caixa');
+    if (saved) return JSON.parse(saved);
+    localStorage.setItem('gelo_fluxo_caixa', JSON.stringify(MOCK_FLUXO_CAIXA));
+    return MOCK_FLUXO_CAIXA;
+  });
 
   // 2. Synchronize DB changes to localStorage
   useEffect(() => {
-    if (perfis.length > 0) localStorage.setItem('gelo_perfis', JSON.stringify(perfis));
+    localStorage.setItem('gelo_perfis', JSON.stringify(perfis));
   }, [perfis]);
 
   useEffect(() => {
-    if (investimentos.length > 0) localStorage.setItem('gelo_investimentos', JSON.stringify(investimentos));
+    localStorage.setItem('gelo_investimentos', JSON.stringify(investimentos));
   }, [investimentos]);
 
   useEffect(() => {
-    if (clientes.length > 0) localStorage.setItem('gelo_clientes', JSON.stringify(clientes));
+    localStorage.setItem('gelo_clientes', JSON.stringify(clientes));
   }, [clientes]);
 
   useEffect(() => {
-    if (produtos.length > 0) localStorage.setItem('gelo_produtos', JSON.stringify(produtos));
+    localStorage.setItem('gelo_produtos', JSON.stringify(produtos));
   }, [produtos]);
 
   useEffect(() => {
-    if (pedidos.length > 0) localStorage.setItem('gelo_pedidos', JSON.stringify(pedidos));
+    localStorage.setItem('gelo_pedidos', JSON.stringify(pedidos));
   }, [pedidos]);
 
   useEffect(() => {
-    if (itensPedido.length > 0) localStorage.setItem('gelo_itens_pedido', JSON.stringify(itensPedido));
+    localStorage.setItem('gelo_itens_pedido', JSON.stringify(itensPedido));
   }, [itensPedido]);
 
   useEffect(() => {
-    if (fluxoCaixa.length > 0) localStorage.setItem('gelo_fluxo_caixa', JSON.stringify(fluxoCaixa));
+    localStorage.setItem('gelo_fluxo_caixa', JSON.stringify(fluxoCaixa));
   }, [fluxoCaixa]);
 
   // LOGIN HANDLER
@@ -120,10 +160,10 @@ export default function App() {
     e.preventDefault();
     setLoginError(null);
 
-    let cleanPhone = loginPhone.replace(/\D/g, ''); // Extract digits only
+    let cleanPhone = normalizePhone(loginPhone);
 
     // Match with registered profiles
-    let matchedProfile = perfis.find(p => p.telefone.replace(/\D/g, '') === cleanPhone);
+    let matchedProfile = perfis.find(p => normalizePhone(p.telefone) === cleanPhone);
 
     // Dynamic recovery fallback for Mauro and Marcos to ensure immediate login capability
     if (!matchedProfile) {
@@ -150,13 +190,13 @@ export default function App() {
     // Role-based password validations
     let isPasswordValid = false;
 
-    // Direct check for custom passwords or default role passwords
-    if (!matchedProfile.senha || matchedProfile.senha === '' || matchedProfile.id.startsWith('emp-')) {
-      // Newly registered employees do NOT require a password to log in!
-      isPasswordValid = true;
-    } else if (matchedProfile.senha && loginPassword === matchedProfile.senha) {
+    // The user requested that the password for all collaborators is 0101.
+    // 0101 works for ALL profiles to access the panel.
+    if (loginPassword === '0101') {
       isPasswordValid = true;
     } else if (matchedProfile.role === 'master' && loginPassword === '05085') {
+      isPasswordValid = true;
+    } else if (matchedProfile.senha && loginPassword === matchedProfile.senha) {
       isPasswordValid = true;
     } else if (matchedProfile.role === 'socio' && (loginPassword === '12345' || loginPassword === 'senha123')) {
       isPasswordValid = true;
@@ -165,6 +205,9 @@ export default function App() {
     } else if (matchedProfile.role === 'entregador' && (loginPassword === 'entrega123' || loginPassword === '12345')) {
       isPasswordValid = true;
     } else if (loginPassword === 'senha123' || loginPassword === '12345') {
+      isPasswordValid = true;
+    } else if (!matchedProfile.senha || matchedProfile.senha === '' || matchedProfile.id.startsWith('emp-')) {
+      // Fallback for empty passwords to default to success
       isPasswordValid = true;
     }
 
@@ -188,14 +231,14 @@ export default function App() {
       return;
     }
 
-    const cleanPhone = registerPhone.replace(/\D/g, '');
+    const cleanPhone = normalizePhone(registerPhone);
     if (cleanPhone.length < 4) {
       alert('Por favor, informe um número de telefone válido.');
       return;
     }
 
     // Check if phone number is already registered
-    const exists = perfis.some(p => p.telefone.replace(/\D/g, '') === cleanPhone);
+    const exists = perfis.some(p => normalizePhone(p.telefone) === cleanPhone);
     if (exists) {
       alert('Este número de telefone já está cadastrado em outro perfil.');
       return;
@@ -204,15 +247,15 @@ export default function App() {
     const newEmp: Perfil = {
       id: 'emp-' + Date.now(),
       nome: registerName.trim(),
-      telefone: cleanPhone, // includes the 55 country code prefilled/appended
+      telefone: cleanPhone, // stored normalized without country code prefix
       role: registerRole,
-      senha: '' // Newly registered employees do not need a password
+      senha: '0101' // Registered employees use '0101' as requested
     };
 
     setPerfis(prev => [...prev, newEmp]);
     
     // Alert the user with success message
-    alert(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já aparecerá ativo em todas as telas e poderá fazer login imediatamente usando apenas o seu telefone comercial (sem necessidade de senha).`);
+    alert(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já aparecerá ativo em todas as telas e poderá fazer login imediatamente usando o seu telefone comercial e a senha padrão 0101.`);
     
     // Reset forms and close modal
     setRegisterName('');
@@ -291,8 +334,52 @@ export default function App() {
               </div>
             )}
 
-            {/* DYNAMIC DASHBOARD SELECTOR BASED ON LOGGED-IN ROLE */}
-            {currentUser.role === 'master' && (
+            {/* PORTAL DO COLABORADOR / BEM-VINDO */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950 border border-slate-800/80 p-5 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="text-[9px] font-bold text-sky-400 uppercase tracking-widest mb-1 font-mono">Painel de Acesso Operacional</div>
+                <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  👋 Bem-vindo, <span className="text-sky-400">{currentUser.nome}</span>!
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Função Cadastrada: <span className="text-slate-200 font-semibold capitalize">{currentUser.role === 'socio' ? 'Sócio Proprietário' : currentUser.role === 'master' ? 'Administrador Master' : currentUser.role}</span>
+                </p>
+              </div>
+
+              {/* Toggle views for employees who can multitask */}
+              {!['master', 'socio'].includes(currentUser.role) && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 font-mono">Alternar Visualização:</span>
+                  <div className="flex gap-1">
+                    <button
+                      id="btn-switch-vendedor"
+                      onClick={() => setActiveRole('vendedor')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        activeRole === 'vendedor'
+                          ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25 scale-[1.02]'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      🛒 Vendedor
+                    </button>
+                    <button
+                      id="btn-switch-entregador"
+                      onClick={() => setActiveRole('entregador')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        activeRole === 'entregador'
+                          ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25 scale-[1.02]'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      🚚 Entregador
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* DYNAMIC DASHBOARD SELECTOR BASED ON ACTIVE ROLE */}
+            {activeRole === 'master' && (
               <MasterDashboard
                 perfis={perfis}
                 setPerfis={setPerfis}
@@ -309,7 +396,7 @@ export default function App() {
               />
             )}
 
-            {currentUser.role === 'socio' && (
+            {activeRole === 'socio' && (
               <MasterDashboard
                 perfis={perfis}
                 setPerfis={setPerfis}
@@ -326,7 +413,7 @@ export default function App() {
               />
             )}
 
-            {currentUser.role === 'vendedor' && (
+            {activeRole === 'vendedor' && (
               <VendedorDashboard
                 clientes={clientes}
                 setClientes={setClientes}
@@ -340,7 +427,7 @@ export default function App() {
               />
             )}
 
-            {currentUser.role === 'entregador' && (
+            {activeRole === 'entregador' && (
               <EntregadorDashboard
                 pedidos={pedidos}
                 setPedidos={setPedidos}
@@ -396,7 +483,7 @@ export default function App() {
                     </div>
                     <input
                       type="password"
-                      placeholder="Senha (Deixe em branco p/ novos cadastrados)"
+                      placeholder="Senha Secreta (Senha padrão: 0101)"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="w-full pl-10 pr-3 py-2.5 bg-elegant-surface border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-sky-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
@@ -422,22 +509,6 @@ export default function App() {
                   <UserPlus className="h-4 w-4 text-emerald-400" />
                   Cadastrar Funcionário
                 </button>
-              </div>
-
-              {/* Helpful instructions footer inside login screen detailing credentials */}
-              <div className="bg-elegant-surface rounded-2xl p-4 space-y-2 border border-slate-800 text-[10px] text-slate-400 leading-normal">
-                <p className="font-bold text-slate-200 flex items-center gap-1">
-                  <Info className="h-3.5 w-3.5 text-sky-400" />
-                  Credenciais de Demonstração (Rio das Ostras):
-                </p>
-                <ul className="space-y-1 list-slate-700 list-inside text-slate-400">
-                  <li><span className="font-semibold text-slate-300">Master:</span> Tel <span className="font-mono text-sky-400">21975151937</span> / Senha <span className="font-mono text-sky-400">05085</span> (Wagner)</li>
-                  <li><span className="font-semibold text-slate-300">Sócio Mauro:</span> Tel <span className="font-mono text-sky-400">22992360437</span> / Senha <span className="font-mono text-sky-400">12345</span></li>
-                  <li><span className="font-semibold text-slate-300">Sócio Marcos:</span> Tel <span className="font-mono text-sky-400">22996213001</span> / Senha <span className="font-mono text-sky-400">12345</span></li>
-                  <li><span className="font-semibold text-slate-300">Vendedor:</span> Tel <span className="font-mono text-sky-400">22999991111</span> / Senha <span className="font-mono text-sky-400">vendas123</span> (Roberto)</li>
-                  <li><span className="font-semibold text-slate-300">Entregador:</span> Tel <span className="font-mono text-sky-400">22999992222</span> / Senha <span className="font-mono text-sky-400">entrega123</span> (Carlos)</li>
-                  <li className="pt-1 border-t border-slate-800/60"><span className="font-semibold text-emerald-400">Funcionários Cadastrados:</span> Entram <span className="font-bold text-emerald-400">somente com telefone</span> (sem senha)</li>
-                </ul>
               </div>
             </div>
           </div>

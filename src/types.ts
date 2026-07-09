@@ -379,3 +379,11 @@ export const MOCK_FLUXO_CAIXA: FluxoCaixa[] = [
   { id: 'caixa-6', tipo: 'despesa', categoria: 'manutenção', valor: 180.00, data: '2026-07-08', descricao: 'Manutenção de correia e troca de óleo Fiorino' },
   { id: 'caixa-7', tipo: 'despesa', categoria: 'pessoal', valor: 1800.00, data: '2026-07-08', descricao: 'Adiantamento quinzenal faturistas e entregadores' }
 ];
+
+export const normalizePhone = (phone: string): string => {
+  const clean = phone.replace(/\D/g, '');
+  if (clean.length >= 12 && clean.startsWith('55')) {
+    return clean.substring(2);
+  }
+  return clean;
+};

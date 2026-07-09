@@ -46,7 +46,8 @@ import {
   Produto,
   Pedido,
   FluxoCaixa,
-  SUPABASE_SQL_SCRIPT
+  SUPABASE_SQL_SCRIPT,
+  normalizePhone
 } from '../types';
 
 interface MasterDashboardProps {
@@ -388,15 +389,29 @@ export default function MasterDashboard({
     if (isSocio) return; // Sócio cannot manage employees
     if (!newEmployee.nome || !newEmployee.telefone) return;
 
+    const cleanPhone = normalizePhone(newEmployee.telefone);
+    if (cleanPhone.length < 4) {
+      alert('Por favor, insira um telefone válido.');
+      return;
+    }
+
+    const exists = perfis.some(p => normalizePhone(p.telefone) === cleanPhone);
+    if (exists) {
+      alert('Este número de telefone já está cadastrado em outro perfil.');
+      return;
+    }
+
     const emp: Perfil = {
       id: 'emp-' + Date.now(),
-      nome: newEmployee.nome,
-      telefone: newEmployee.telefone,
-      role: newEmployee.role
+      nome: newEmployee.nome.trim(),
+      telefone: cleanPhone,
+      role: newEmployee.role,
+      senha: '0101' // Default password for newly added employees
     };
 
     setPerfis(prev => [...prev, emp]);
     setNewEmployee({ nome: '', telefone: '', role: 'vendedor' });
+    alert(`Funcionário ${emp.nome} cadastrado com sucesso!`);
   };
 
   const handleAddClient = (e: React.FormEvent) => {
