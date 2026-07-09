@@ -25,7 +25,9 @@ import {
   Database,
   Building,
   Pencil,
-  X
+  X,
+  Sliders,
+  Percent
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -183,6 +185,27 @@ export default function MasterDashboard({
     preco_venda: '',
     estoque_atual: ''
   });
+
+  const [editingProduct, setEditingProduct] = useState<Produto | null>(null);
+
+  const [mauroShare, setMauroShare] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_socio_share_mauro');
+    return saved ? parseFloat(saved) : 33.33;
+  });
+  const [wagnerShare, setWagnerShare] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_socio_share_wagner');
+    return saved ? parseFloat(saved) : 33.33;
+  });
+  const [marcosShare, setMarcosShare] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_socio_share_marcos');
+    return saved ? parseFloat(saved) : 33.34;
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('gelo_socio_share_mauro', mauroShare.toString());
+    localStorage.setItem('gelo_socio_share_wagner', wagnerShare.toString());
+    localStorage.setItem('gelo_socio_share_marcos', marcosShare.toString());
+  }, [mauroShare, wagnerShare, marcosShare]);
 
   const [newEmployee, setNewEmployee] = useState({
     nome: '',
@@ -415,6 +438,19 @@ export default function MasterDashboard({
 
     setProdutos(prev => [...prev, p]);
     setNewProduct({ nome: '', preco_custo: '', preco_venda: '', estoque_atual: '' });
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    if (window.confirm('Tem certeza de que deseja excluir este produto do catálogo?')) {
+      setProdutos(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleUpdateProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setProdutos(prev => prev.map(item => item.id === editingProduct.id ? editingProduct : item));
+    setEditingProduct(null);
   };
 
   const handleAddEmployee = (e: React.FormEvent) => {
@@ -1091,6 +1127,7 @@ export default function MasterDashboard({
                       <th className="pb-3">Preço Venda</th>
                       <th className="pb-3">Margem Unitária</th>
                       <th className="pb-3 text-right">Estoque Atual</th>
+                      <th className="pb-3 text-right w-20">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50 text-xs text-slate-300">
@@ -1112,6 +1149,22 @@ export default function MasterDashboard({
                             <span className={`px-2 py-0.5 rounded-sm text-[10px] ${isLowEstoque ? 'bg-red-500/15 text-red-400 font-bold border border-red-500/20' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'}`}>
                               {p.estoque_atual} un
                             </span>
+                          </td>
+                          <td className="py-3 text-right space-x-1 whitespace-nowrap">
+                            <button
+                              onClick={() => setEditingProduct(p)}
+                              className="text-sky-400 hover:text-sky-300 transition-all cursor-pointer p-1.5 hover:bg-sky-500/10 rounded inline-flex items-center justify-center"
+                              title="Editar produto"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="text-rose-500 hover:text-rose-400 transition-all cursor-pointer p-1.5 hover:bg-rose-500/10 rounded inline-flex items-center justify-center"
+                              title="Excluir produto"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1475,10 +1528,118 @@ export default function MasterDashboard({
             </div>
           </div>
 
+          {/* Slider Adjustment Section */}
+          <div className="bg-elegant-card p-6 rounded-2xl border border-slate-800 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div>
+                <h4 className="font-bold text-sm text-white flex items-center gap-1.5">
+                  <Sliders className="h-4 w-4 text-sky-400" />
+                  Ajuste de Participação nos Lucros
+                </h4>
+                <p className="text-[11px] text-slate-400">Altere a porcentagem de lucro de cada sócio usando os controles abaixo.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMauroShare(33.33);
+                  setWagnerShare(33.33);
+                  setMarcosShare(33.34);
+                }}
+                className="text-[10px] bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 py-1.5 px-3 rounded-xl transition font-semibold cursor-pointer"
+              >
+                Dividir Igualmente (1/3)
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Mauro */}
+              <div className="space-y-2 bg-[#0F1115] border border-slate-850 p-3.5 rounded-xl">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-emerald-400">Mauro</span>
+                  <span className="font-mono text-white bg-slate-800 px-2 py-0.5 rounded text-[11px] font-bold">{mauroShare.toFixed(2)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={mauroShare}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setMauroShare(val);
+                  }}
+                  className="w-full accent-emerald-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
+                />
+              </div>
+
+              {/* Wagner */}
+              <div className="space-y-2 bg-[#0F1115] border border-slate-850 p-3.5 rounded-xl">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-indigo-400">Wagner</span>
+                  <span className="font-mono text-white bg-slate-800 px-2 py-0.5 rounded text-[11px] font-bold">{wagnerShare.toFixed(2)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={wagnerShare}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setWagnerShare(val);
+                  }}
+                  className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
+                />
+              </div>
+
+              {/* Marcos */}
+              <div className="space-y-2 bg-[#0F1115] border border-slate-850 p-3.5 rounded-xl">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-amber-400">Marcos</span>
+                  <span className="font-mono text-white bg-slate-800 px-2 py-0.5 rounded text-[11px] font-bold">{marcosShare.toFixed(2)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={marcosShare}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setMarcosShare(val);
+                  }}
+                  className="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
+                />
+              </div>
+            </div>
+
+            {/* Sum validator */}
+            {(() => {
+              const totalSum = mauroShare + wagnerShare + marcosShare;
+              const isPerfect = Math.abs(totalSum - 100) < 0.05;
+              return (
+                <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${isPerfect ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'}`}></span>
+                    <span>Total da Participação: <strong className={isPerfect ? 'text-emerald-400' : 'text-rose-400'}>{totalSum.toFixed(2)}%</strong></span>
+                  </div>
+                  {!isPerfect && (
+                    <span className="text-rose-400 font-medium">A soma das participações deve fechar em exatamente 100% para evitar inconsistências contábeis.</span>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
           {/* Dynamic calculations for profits */}
           {(() => {
             const totalProfitToDistribute = stats.netProfit + simulatedProfitOffset;
-            const sharePerSocio = totalProfitToDistribute / 3;
+            
+            const sharePerSocioMap = {
+              Mauro: totalProfitToDistribute * (mauroShare / 100),
+              Wagner: totalProfitToDistribute * (wagnerShare / 100),
+              Marcos: totalProfitToDistribute * (marcosShare / 100)
+            };
 
             const partners: Array<{ name: 'Mauro' | 'Wagner' | 'Marcos'; color: string; label: string }> = [
               { name: 'Mauro', color: 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5', label: 'Investidor Executivo' },
@@ -1494,8 +1655,9 @@ export default function MasterDashboard({
               const pct = parseFloat(percentageStr);
               if (isNaN(pct) || pct <= 0 || pct > 100) return;
               
-              const calculatedValue = sharePerSocio * (pct / 100);
-              const remaining = sharePerSocio - getSocioAportesSum(socioName);
+              const socioShareVal = sharePerSocioMap[socioName];
+              const calculatedValue = socioShareVal * (pct / 100);
+              const remaining = socioShareVal - getSocioAportesSum(socioName);
               
               if (calculatedValue > remaining) {
                 alert(`O valor calculado para o aporte (R$ ${calculatedValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}) excede o saldo de lucros distribuídos disponível para este sócio (R$ ${remaining.toLocaleString('pt-BR', {minimumFractionDigits: 2})}).`);
@@ -1541,11 +1703,13 @@ export default function MasterDashboard({
 
                   <div className="bg-elegant-card border border-slate-800 p-4.5 rounded-2xl flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Parte Igual por Sócio (1/3)</p>
-                      <h4 className="text-lg font-black text-sky-400 mt-1">R$ {sharePerSocio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h4>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Participação Definida (Soma)</p>
+                      <h4 className="text-sm font-bold text-sky-400 mt-1">
+                        Mauro: {mauroShare.toFixed(1)}% | Wagner: {wagnerShare.toFixed(1)}% | Marcos: {marcosShare.toFixed(1)}%
+                      </h4>
                     </div>
                     <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20">
-                      <Users className="h-5 w-5" />
+                      <Sliders className="h-5 w-5" />
                     </div>
                   </div>
                 </div>
@@ -1554,7 +1718,9 @@ export default function MasterDashboard({
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {partners.map(p => {
                     const contributed = getSocioAportesSum(p.name);
-                    const remaining = Math.max(0, sharePerSocio - contributed);
+                    const currentSharePct = p.name === 'Mauro' ? mauroShare : p.name === 'Wagner' ? wagnerShare : marcosShare;
+                    const socioShareVal = sharePerSocioMap[p.name];
+                    const remaining = Math.max(0, socioShareVal - contributed);
                     const percentInput = p.name === 'Mauro' ? mauroPercent : p.name === 'Wagner' ? wagnerPercent : marcosPercent;
                     const setPercentInput = p.name === 'Mauro' ? setMauroPercent : p.name === 'Wagner' ? setWagnerPercent : setMarcosPercent;
 
@@ -1575,8 +1741,8 @@ export default function MasterDashboard({
 
                           <div className="bg-[#0F1115] border border-slate-850 p-3.5 rounded-xl space-y-2">
                             <div className="flex justify-between text-xs">
-                              <span className="text-slate-400">Total de Direito (1/3):</span>
-                              <span className="font-bold text-slate-200">R$ {sharePerSocio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              <span className="text-slate-400">Total de Direito ({currentSharePct.toFixed(1)}%):</span>
+                              <span className="font-bold text-slate-200">R$ {socioShareVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex justify-between text-xs">
                               <span className="text-slate-400">Lucro Já Aportado:</span>
@@ -1632,7 +1798,7 @@ export default function MasterDashboard({
                           </div>
                           
                           <p className="text-[9px] text-slate-500 leading-normal text-center">
-                            Calculado: R$ {((sharePerSocio * (parseFloat(percentInput) || 0)) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            Calculado: R$ {((socioShareVal * (parseFloat(percentInput) || 0)) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                       </div>
@@ -2159,6 +2325,90 @@ export default function MasterDashboard({
                 <button
                   type="button"
                   onClick={() => setEditingVehicle(null)}
+                  className="w-1/2 border border-slate-800 text-slate-400 hover:text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT PRODUCT */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-xs">
+          <div className="bg-elegant-card border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button
+              onClick={() => setEditingProduct(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-sky-400" />
+              Editar Produto / Gelo
+            </h3>
+
+            <form onSubmit={handleUpdateProduct} className="space-y-4 text-left">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Nome / Embalagem</label>
+                <input
+                  type="text"
+                  required
+                  value={editingProduct.nome}
+                  onChange={(e) => setEditingProduct(prev => prev ? ({ ...prev, nome: e.target.value }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Preço Custo (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editingProduct.preco_custo || ''}
+                    onChange={(e) => setEditingProduct(prev => prev ? ({ ...prev, preco_custo: parseFloat(e.target.value) || 0 }) : null)}
+                    className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Preço Venda (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editingProduct.preco_venda || ''}
+                    onChange={(e) => setEditingProduct(prev => prev ? ({ ...prev, preco_venda: parseFloat(e.target.value) || 0 }) : null)}
+                    className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Estoque Atual</label>
+                <input
+                  type="number"
+                  required
+                  value={editingProduct.estoque_atual || ''}
+                  onChange={(e) => setEditingProduct(prev => prev ? ({ ...prev, estoque_atual: parseInt(e.target.value) || 0 }) : null)}
+                  className="w-full mt-1 border border-slate-800 bg-elegant-surface text-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:border-sky-500/50"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
                   className="w-1/2 border border-slate-800 text-slate-400 hover:text-white font-semibold text-xs py-2 rounded-lg transition cursor-pointer"
                 >
                   Cancelar
