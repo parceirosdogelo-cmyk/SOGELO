@@ -463,7 +463,7 @@ export default function MasterDashboard({
             <h2 className="text-2xl font-bold mt-1 text-white">
               {isSocio ? `Olá Sócio, ${currentUserName || 'Sócio'}` : `Olá, ${currentUserName || 'Wagner Teixeira'}`}
             </h2>
-            <p className="text-slate-400 text-xs">Gestão operacional da Distribuidora de Gelo em Rio das Ostras - RJ</p>
+            <p className="text-slate-400 text-xs">Gestão operacional do Parceiros do Gelo em Rio das Ostras - RJ</p>
           </div>
           <div className="flex gap-2">
             <span className="text-xs bg-slate-800/80 border border-slate-700 py-1.5 px-3 rounded-xl flex items-center gap-1.5 font-mono text-slate-300">

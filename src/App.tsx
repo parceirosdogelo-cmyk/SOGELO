@@ -278,11 +278,11 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-sky-500 rounded flex items-center justify-center shadow-[0_0_15px_rgba(14,165,233,0.3)]">
-              <span className="font-black text-white text-lg tracking-tighter">G</span>
+              <span className="font-black text-white text-lg tracking-tighter">P</span>
             </div>
             <div>
               <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-                GELO RIO DAS OSTRAS
+                PARCEIROS DO GELO
                 <span className="text-[10px] bg-sky-500/10 text-sky-400 px-2 py-0.2 rounded-full font-semibold border border-sky-500/20">RJ</span>
               </h1>
               <p className="text-[10px] text-sky-400 font-mono tracking-widest uppercase">Master Command Center</p>
@@ -447,9 +447,9 @@ export default function App() {
               
               <div className="text-center space-y-2">
                 <div className="mx-auto w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30">
-                  <span className="font-black text-white text-lg tracking-tighter">G</span>
+                  <span className="font-black text-white text-lg tracking-tighter">P</span>
                 </div>
-                <h2 className="font-extrabold text-white text-lg">Distribuidora de Gelo</h2>
+                <h2 className="font-extrabold text-white text-lg">Parceiros do Gelo</h2>
                 <p className="text-xs text-slate-400">Rio das Ostras - RJ • Login Operacional</p>
               </div>
 
@@ -609,7 +609,7 @@ export default function App() {
 
       {/* 3. APP FOOTER */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-500 py-4 px-4 text-center text-[10px] shrink-0 leading-normal">
-        <p className="font-medium">© 2026 Operação de Distribuição de Gelo - Rio das Ostras - RJ</p>
+        <p className="font-medium">© 2026 Operação Parceiros do Gelo - Rio das Ostras - RJ</p>
         <p className="text-slate-600 mt-0.5">Tecnologias: Next.js/React • Supabase PostgreSQL (RLS) • Google AI Studio API</p>
       </footer>
     </div>
