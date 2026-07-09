@@ -1,0 +1,6 @@
+{
+  "name": "Parceiros do Gelo",
+  "description": "Sistema completo e seguro para gerenciamento de distribuição de gelo em Rio das Ostras - RJ, com controle financeiro, frotas, rotas otimizadas por IA e previsão de demanda.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
