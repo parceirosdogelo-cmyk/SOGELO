@@ -154,6 +154,55 @@ export default function App() {
     return saved ? parseFloat(saved) : 33.34;
   });
 
+  // Flag to indicate active local user changes that need to be POSTed to the server
+  const hasLocalChanges = useRef<boolean>(false);
+
+  // Wrapper functions to mark active user changes
+  const updatePerfis = (val: Perfil[] | ((prev: Perfil[]) => Perfil[])) => {
+    hasLocalChanges.current = true;
+    setPerfis(val);
+  };
+  const updateInvestimentos = (val: InvestimentoFrota[] | ((prev: InvestimentoFrota[]) => InvestimentoFrota[])) => {
+    hasLocalChanges.current = true;
+    setInvestimentos(val);
+  };
+  const updateClientes = (val: Cliente[] | ((prev: Cliente[]) => Cliente[])) => {
+    hasLocalChanges.current = true;
+    setClientes(val);
+  };
+  const updateProdutos = (val: Produto[] | ((prev: Produto[]) => Produto[])) => {
+    hasLocalChanges.current = true;
+    setProdutos(val);
+  };
+  const updatePedidos = (val: Pedido[] | ((prev: Pedido[]) => Pedido[])) => {
+    hasLocalChanges.current = true;
+    setPedidos(val);
+  };
+  const updateItensPedido = (val: ItemPedido[] | ((prev: ItemPedido[]) => ItemPedido[])) => {
+    hasLocalChanges.current = true;
+    setItensPedido(val);
+  };
+  const updateFluxoCaixa = (val: FluxoCaixa[] | ((prev: FluxoCaixa[]) => FluxoCaixa[])) => {
+    hasLocalChanges.current = true;
+    setFluxoCaixa(val);
+  };
+  const updateAportes = (val: any[] | ((prev: any[]) => any[])) => {
+    hasLocalChanges.current = true;
+    setAportes(val);
+  };
+  const updateMauroShare = (val: number | ((prev: number) => number)) => {
+    hasLocalChanges.current = true;
+    setMauroShare(val);
+  };
+  const updateWagnerShare = (val: number | ((prev: number) => number)) => {
+    hasLocalChanges.current = true;
+    setWagnerShare(val);
+  };
+  const updateMarcosShare = (val: number | ((prev: number) => number)) => {
+    hasLocalChanges.current = true;
+    setMarcosShare(val);
+  };
+
   // Keep latestDbState ref updated with the absolute latest, unstale state of everything
   useEffect(() => {
     latestDbState.current = {
@@ -245,7 +294,7 @@ export default function App() {
   useEffect(() => {
     if (currentUser && !perfis.some(p => p.id === currentUser.id)) {
       console.log('Recovering active user profile in perfis list:', currentUser);
-      setPerfis(prev => {
+      updatePerfis(prev => {
         if (!prev.some(p => p.id === currentUser.id)) {
           return [...prev, currentUser];
         }
@@ -257,6 +306,15 @@ export default function App() {
   // 2. Synchronize all database states to the server
   useEffect(() => {
     if (!isLoaded) return;
+
+    // Only sync if there are pending local user changes
+    if (!hasLocalChanges.current) {
+      console.log('No local user changes to sync, skipping POST.');
+      return;
+    }
+
+    // Reset local changes flag BEFORE sending, so subsequent rapid updates are captured
+    hasLocalChanges.current = false;
 
     // Calculate current DB payload
     const dbPayload = {
@@ -274,13 +332,6 @@ export default function App() {
     };
 
     const payloadStr = JSON.stringify(dbPayload);
-
-    // If the local state is exactly identical to what we last received from the server,
-    // do NOT send a POST request. This completely avoids feedback loops and race conditions!
-    if (payloadStr === lastServerData.current) {
-      console.log('Local state matches last server data, skipping POST sync.');
-      return;
-    }
 
     // Save locally for safety/offline resilience
     localStorage.setItem('gelo_perfis', JSON.stringify(perfis));
@@ -337,19 +388,19 @@ export default function App() {
     if (!matchedProfile) {
       if (cleanPhone === '22992360437') {
         matchedProfile = { id: 'socio-mauro', nome: 'Mauro', telefone: '22992360437', role: 'socio', senha: '12345' };
-        setPerfis(prev => {
+        updatePerfis(prev => {
           const filtered = prev.filter(p => p.id !== 'socio-mauro');
           return [...filtered, matchedProfile!];
         });
       } else if (cleanPhone === '22996213001') {
         matchedProfile = { id: 'socio-marcos', nome: 'Marcos', telefone: '22996213001', role: 'socio', senha: '12345' };
-        setPerfis(prev => {
+        updatePerfis(prev => {
           const filtered = prev.filter(p => p.id !== 'socio-marcos');
           return [...filtered, matchedProfile!];
         });
       } else if (cleanPhone === '22991052928') {
         matchedProfile = { id: 'emp-1783683916200', nome: 'IGOR TEIXEIRA', telefone: '22991052928', role: 'vendedor', senha: '0101' };
-        setPerfis(prev => {
+        updatePerfis(prev => {
           const filtered = prev.filter(p => p.id !== 'emp-1783683916200');
           return [...filtered, matchedProfile!];
         });
@@ -573,71 +624,71 @@ export default function App() {
             {activeRole === 'master' && (
               <MasterDashboard
                 perfis={perfis}
-                setPerfis={setPerfis}
+                setPerfis={updatePerfis}
                 investimentos={investimentos}
-                setInvestimentos={setInvestimentos}
+                setInvestimentos={updateInvestimentos}
                 clientes={clientes}
-                setClientes={setClientes}
+                setClientes={updateClientes}
                 produtos={produtos}
-                setProdutos={setProdutos}
+                setProdutos={updateProdutos}
                 pedidos={pedidos}
-                setPedidos={setPedidos}
+                setPedidos={updatePedidos}
                 itensPedido={itensPedido}
-                setItensPedido={setItensPedido}
+                setItensPedido={updateItensPedido}
                 fluxoCaixa={fluxoCaixa}
-                setFluxoCaixa={setFluxoCaixa}
+                setFluxoCaixa={updateFluxoCaixa}
                 isSocio={false}
                 currentUserName={currentUser.nome}
                 aportes={aportes}
-                setAportes={setAportes}
+                setAportes={updateAportes}
                 mauroShare={mauroShare}
-                setMauroShare={setMauroShare}
+                setMauroShare={updateMauroShare}
                 wagnerShare={wagnerShare}
-                setWagnerShare={setWagnerShare}
+                setWagnerShare={updateWagnerShare}
                 marcosShare={marcosShare}
-                setMarcosShare={setMarcosShare}
+                setMarcosShare={updateMarcosShare}
               />
             )}
 
             {activeRole === 'socio' && (
               <MasterDashboard
                 perfis={perfis}
-                setPerfis={setPerfis}
+                setPerfis={updatePerfis}
                 investimentos={investimentos}
-                setInvestimentos={setInvestimentos}
+                setInvestimentos={updateInvestimentos}
                 clientes={clientes}
-                setClientes={setClientes}
+                setClientes={updateClientes}
                 produtos={produtos}
-                setProdutos={setProdutos}
+                setProdutos={updateProdutos}
                 pedidos={pedidos}
-                setPedidos={setPedidos}
+                setPedidos={updatePedidos}
                 itensPedido={itensPedido}
-                setItensPedido={setItensPedido}
+                setItensPedido={updateItensPedido}
                 fluxoCaixa={fluxoCaixa}
-                setFluxoCaixa={setFluxoCaixa}
+                setFluxoCaixa={updateFluxoCaixa}
                 isSocio={true} // Sócio has financial metrics but locks user manager
                 currentUserName={currentUser.nome}
                 aportes={aportes}
-                setAportes={setAportes}
+                setAportes={updateAportes}
                 mauroShare={mauroShare}
-                setMauroShare={setMauroShare}
+                setMauroShare={updateMauroShare}
                 wagnerShare={wagnerShare}
-                setWagnerShare={setWagnerShare}
+                setWagnerShare={updateWagnerShare}
                 marcosShare={marcosShare}
-                setMarcosShare={setMarcosShare}
+                setMarcosShare={updateMarcosShare}
               />
             )}
 
             {activeRole === 'vendedor' && (
               <VendedorDashboard
                 clientes={clientes}
-                setClientes={setClientes}
+                setClientes={updateClientes}
                 produtos={produtos}
-                setProdutos={setProdutos}
+                setProdutos={updateProdutos}
                 pedidos={pedidos}
-                setPedidos={setPedidos}
+                setPedidos={updatePedidos}
                 itensPedido={itensPedido}
-                setItensPedido={setItensPedido}
+                setItensPedido={updateItensPedido}
                 perfis={perfis}
                 currentUser={currentUser}
               />
@@ -646,13 +697,13 @@ export default function App() {
             {activeRole === 'entregador' && (
               <EntregadorDashboard
                 pedidos={pedidos}
-                setPedidos={setPedidos}
+                setPedidos={updatePedidos}
                 clientes={clientes}
-                setClientes={setClientes}
+                setClientes={updateClientes}
                 produtos={produtos}
-                setProdutos={setProdutos}
+                setProdutos={updateProdutos}
                 itensPedido={itensPedido}
-                setItensPedido={setItensPedido}
+                setItensPedido={updateItensPedido}
                 perfis={perfis}
                 currentUser={currentUser}
               />
