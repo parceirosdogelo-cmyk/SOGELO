@@ -91,6 +91,7 @@ export default function App() {
   // Synchronization locks to prevent loop feedback and overwrite race conditions
   const isUpdatingFromServer = useRef(false);
   const lastLocalChangeTime = useRef<number>(0);
+  const latestDbState = useRef<any>(null);
 
   const [perfis, setPerfis] = useState<Perfil[]>(() => {
     const saved = localStorage.getItem('gelo_perfis');
@@ -153,6 +154,35 @@ export default function App() {
     return saved ? parseFloat(saved) : 33.34;
   });
 
+  // Keep latestDbState ref updated with the absolute latest, unstale state of everything
+  useEffect(() => {
+    latestDbState.current = {
+      perfis,
+      investimentos,
+      clientes,
+      produtos,
+      pedidos,
+      itensPedido,
+      fluxoCaixa,
+      aportes,
+      mauroShare,
+      wagnerShare,
+      marcosShare
+    };
+  }, [
+    perfis,
+    investimentos,
+    clientes,
+    produtos,
+    pedidos,
+    itensPedido,
+    fluxoCaixa,
+    aportes,
+    mauroShare,
+    wagnerShare,
+    marcosShare
+  ]);
+
   // 1. Fetch unified data from server on mount, with a 5-second polling interval for real-time synchronization
   useEffect(() => {
     const fetchData = () => {
@@ -163,31 +193,52 @@ export default function App() {
         return;
       }
 
+      const currentLocal = latestDbState.current;
+      if (!currentLocal) {
+        return;
+      }
+
       fetch('/api/sync-data')
         .then(res => res.json())
         .then(data => {
           if (data.success && data.db) {
             const db = data.db;
             
-            // Mark that we are updating from server to prevent POST feedback loops
-            isUpdatingFromServer.current = true;
+            // Check if there is any actual difference between current local state and server data
+            const hasChanges = 
+              JSON.stringify(currentLocal.perfis) !== JSON.stringify(db.perfis) ||
+              JSON.stringify(currentLocal.investimentos) !== JSON.stringify(db.investimentos) ||
+              JSON.stringify(currentLocal.clientes) !== JSON.stringify(db.clientes) ||
+              JSON.stringify(currentLocal.produtos) !== JSON.stringify(db.produtos) ||
+              JSON.stringify(currentLocal.pedidos) !== JSON.stringify(db.pedidos) ||
+              JSON.stringify(currentLocal.itensPedido) !== JSON.stringify(db.itensPedido) ||
+              JSON.stringify(currentLocal.fluxoCaixa) !== JSON.stringify(db.fluxoCaixa) ||
+              JSON.stringify(currentLocal.aportes) !== JSON.stringify(db.aportes) ||
+              currentLocal.mauroShare !== db.mauroShare ||
+              currentLocal.wagnerShare !== db.wagnerShare ||
+              currentLocal.marcosShare !== db.marcosShare;
 
-            setPerfis(prev => JSON.stringify(prev) !== JSON.stringify(db.perfis) ? db.perfis : prev);
-            setInvestimentos(prev => JSON.stringify(prev) !== JSON.stringify(db.investimentos) ? db.investimentos : prev);
-            setClientes(prev => JSON.stringify(prev) !== JSON.stringify(db.clientes) ? db.clientes : prev);
-            setProdutos(prev => JSON.stringify(prev) !== JSON.stringify(db.produtos) ? db.produtos : prev);
-            setPedidos(prev => JSON.stringify(prev) !== JSON.stringify(db.pedidos) ? db.pedidos : prev);
-            setItensPedido(prev => JSON.stringify(prev) !== JSON.stringify(db.itensPedido) ? db.itensPedido : prev);
-            setFluxoCaixa(prev => JSON.stringify(prev) !== JSON.stringify(db.fluxoCaixa) ? db.fluxoCaixa : prev);
-            setAportes(prev => JSON.stringify(prev) !== JSON.stringify(db.aportes) ? db.aportes : prev);
-            setMauroShare(prev => prev !== db.mauroShare && typeof db.mauroShare === 'number' ? db.mauroShare : prev);
-            setWagnerShare(prev => prev !== db.wagnerShare && typeof db.wagnerShare === 'number' ? db.wagnerShare : prev);
-            setMarcosShare(prev => prev !== db.marcosShare && typeof db.marcosShare === 'number' ? db.marcosShare : prev);
+            if (hasChanges) {
+              console.log('Server has new data, updating local state...');
+              isUpdatingFromServer.current = true;
 
-            // Allow the state batching and render cycle to finish before clearing the flag
-            setTimeout(() => {
-              isUpdatingFromServer.current = false;
-            }, 300);
+              setPerfis(db.perfis);
+              setInvestimentos(db.investimentos);
+              setClientes(db.clientes);
+              setProdutos(db.produtos);
+              setPedidos(db.pedidos);
+              setItensPedido(db.itensPedido);
+              setFluxoCaixa(db.fluxoCaixa);
+              setAportes(db.aportes);
+              setMauroShare(db.mauroShare);
+              setWagnerShare(db.wagnerShare);
+              setMarcosShare(db.marcosShare);
+
+              // Clear lock fallback after 1 second to ensure lock is released
+              setTimeout(() => {
+                isUpdatingFromServer.current = false;
+              }, 1000);
+            }
           }
           setIsLoaded(true);
         })
@@ -208,6 +259,7 @@ export default function App() {
 
     // If we are currently applying a server update, do NOT send a POST request
     if (isUpdatingFromServer.current) {
+      isUpdatingFromServer.current = false; // Reset the flag immediately upon consume
       return;
     }
 
