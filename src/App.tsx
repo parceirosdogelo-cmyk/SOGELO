@@ -206,13 +206,12 @@ export default function App() {
             if (currentLocal) {
               const currentLocalStr = JSON.stringify(currentLocal);
               
-              // Only apply if the server has different data from our current local state,
-              // AND it is different from the last server data we recorded (to avoid redundant renders)
-              if (dbStr !== currentLocalStr && dbStr !== lastServerData.current) {
+              // Always record the server state to prevent redundant POSTs from triggering on mount or on poll
+              lastServerData.current = dbStr;
+
+              // Only apply if the server has different data from our current local state
+              if (dbStr !== currentLocalStr) {
                 console.log('Server has new data, updating local state...');
-                
-                // Store the raw string of the server data to skip the next POST synchronization effect
-                lastServerData.current = dbStr;
 
                 setPerfis(db.perfis);
                 setInvestimentos(db.investimentos);
@@ -240,6 +239,20 @@ export default function App() {
     const interval = setInterval(fetchData, 4000); // Poll every 4 seconds for a tighter real-time synchronization feeling
     return () => clearInterval(interval);
   }, []);
+
+  // Self-healing: if current logged-in user is missing from the profiles list (e.g., due to an overwrite/reset),
+  // immediately restore them so they persist on the server and are visible on the Master Panel!
+  useEffect(() => {
+    if (currentUser && !perfis.some(p => p.id === currentUser.id)) {
+      console.log('Recovering active user profile in perfis list:', currentUser);
+      setPerfis(prev => {
+        if (!prev.some(p => p.id === currentUser.id)) {
+          return [...prev, currentUser];
+        }
+        return prev;
+      });
+    }
+  }, [currentUser, perfis]);
 
   // 2. Synchronize all database states to the server
   useEffect(() => {
