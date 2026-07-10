@@ -54,7 +54,8 @@ import {
   ItemPedido,
   FluxoCaixa,
   SUPABASE_SQL_SCRIPT,
-  normalizePhone
+  normalizePhone,
+  formatPhoneForDisplay
 } from '../types';
 import VenderForm from './VenderForm';
 import SalesHistoryTabs from './SalesHistoryTabs';
@@ -468,12 +469,7 @@ export default function MasterDashboard({
       return;
     }
 
-    let phoneInput = newEmployee.telefone.replace(/\D/g, '');
-    if (phoneInput.startsWith('55') && phoneInput.length >= 11) {
-      phoneInput = phoneInput.substring(2);
-    }
-
-    const cleanPhone = normalizePhone(phoneInput);
+    const cleanPhone = normalizePhone(newEmployee.telefone);
     if (cleanPhone.length < 4) {
       setEmployeeError('Por favor, insira um telefone válido com DDD.');
       return;
@@ -1360,15 +1356,20 @@ export default function MasterDashboard({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Telefone (Apenas números com DDD)</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Telefone (DDD e Número)</label>
                   <input
                     type="tel"
                     required
-                    placeholder="Ex: 22999992222"
+                    placeholder="Ex: 22 99999-2222 ou 22999992222"
                     value={newEmployee.telefone}
                     onChange={(e) => setNewEmployee(prev => ({ ...prev, telefone: e.target.value }))}
                     className="w-full mt-1 border border-slate-800 bg-[#0F1115] text-slate-200 rounded-lg p-1.5 text-xs focus:outline-none focus:border-sky-500/50"
                   />
+                  {newEmployee.telefone && (
+                    <div className="mt-1 text-[10px] text-sky-400 font-medium">
+                      Interpretação: <span className="font-mono font-bold">{formatPhoneForDisplay(newEmployee.telefone)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>

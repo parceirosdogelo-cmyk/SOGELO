@@ -36,7 +36,8 @@ import {
   MOCK_PEDIDOS,
   MOCK_ITENS_PEDIDO,
   MOCK_FLUXO_CAIXA,
-  normalizePhone
+  normalizePhone,
+  formatPhoneForDisplay
 } from './types';
 
 import MasterDashboard from './components/MasterDashboard';
@@ -78,7 +79,7 @@ export default function App() {
   // New Employee Registration states from Login panel
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerName, setRegisterName] = useState('');
-  const [registerPhone, setRegisterPhone] = useState('55'); // default with 55 country code prefilled
+  const [registerPhone, setRegisterPhone] = useState(''); // default empty for natural typing
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerRole, setRegisterRole] = useState<'socio' | 'vendedor' | 'entregador'>('vendedor');
   const [registerError, setRegisterError] = useState<string | null>(null);
@@ -341,7 +342,7 @@ export default function App() {
     // Reset forms and close modal after a brief duration
     setTimeout(() => {
       setRegisterName('');
-      setRegisterPhone('55');
+      setRegisterPhone('');
       setRegisterPassword('');
       setRegisterRole('vendedor');
       setRegisterSuccess(null);
@@ -352,7 +353,7 @@ export default function App() {
 
   const handleCloseRegisterModal = () => {
     setRegisterName('');
-    setRegisterPhone('55');
+    setRegisterPhone('');
     setRegisterPassword('');
     setRegisterRole('vendedor');
     setRegisterError(null);
@@ -599,6 +600,11 @@ export default function App() {
                       className="w-full pl-10 pr-3 py-2.5 bg-elegant-surface border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-sky-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
                     />
                   </div>
+                  {loginPhone && (
+                    <div className="mt-1.5 text-[10px] text-sky-400 font-medium">
+                      Interpretação: <span className="font-mono font-bold">{formatPhoneForDisplay(loginPhone)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -644,7 +650,7 @@ export default function App() {
       {/* REGISTRATION MODAL */}
       {showRegisterModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-elegant-card border border-slate-800 rounded-3xl p-6 shadow-2xl shadow-black relative overflow-hidden animate-in zoom-in duration-200">
+          <div className="w-full max-w-sm bg-elegant-card border border-slate-800 rounded-3xl p-6 shadow-2xl shadow-black relative max-h-[90vh] overflow-y-auto animate-in zoom-in duration-200">
             <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none"></div>
             
             <div className="flex justify-between items-center border-b border-slate-800 pb-3.5 mb-4">
@@ -689,27 +695,26 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Telefone Comercial (Com DDI 55 Brasil)</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Telefone Comercial (Com DDD)</label>
                 <div className="relative mt-1">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-400 font-mono font-bold text-xs">
-                    +55
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <Phone className="h-4 w-4" />
                   </div>
                   <input
                     type="tel"
                     required
-                    placeholder="(DDD) 99999-9999 (Ex: 22999992222)"
-                    value={registerPhone.startsWith('55') ? registerPhone.substring(2) : registerPhone}
-                    onChange={(e) => {
-                      let val = e.target.value.replace(/\D/g, '');
-                      if (val.startsWith('55') && val.length >= 11) {
-                        val = val.substring(2);
-                      }
-                      setRegisterPhone('55' + val);
-                    }}
-                    className="w-full pl-12 pr-3 py-2.5 bg-[#0F1115] border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-emerald-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
+                    placeholder="Ex: 22 99999-2222 ou 22999992222"
+                    value={registerPhone}
+                    onChange={(e) => setRegisterPhone(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2.5 bg-[#0F1115] border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-emerald-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
                   />
                 </div>
-                <p className="text-[9px] text-slate-500 mt-1">O prefixo internacional brasileiro <span className="font-bold text-slate-400">+55</span> é inserido automaticamente no banco de dados.</p>
+                {registerPhone && (
+                  <div className="mt-1.5 text-[10px] text-emerald-400 font-medium">
+                    Interpretação: <span className="font-mono font-bold">{formatPhoneForDisplay(registerPhone)}</span>
+                  </div>
+                )}
+                <p className="text-[9px] text-slate-500 mt-1">Insira o DDD e o número. O sistema formata e valida automaticamente.</p>
               </div>
 
               <div>

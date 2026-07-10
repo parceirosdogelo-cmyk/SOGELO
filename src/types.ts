@@ -397,3 +397,18 @@ export const normalizePhone = (phone: string): string => {
   }
   return clean;
 };
+
+export const formatPhoneForDisplay = (phone: string): string => {
+  const clean = normalizePhone(phone);
+  if (clean.length === 0) return '';
+  if (clean.length <= 2) {
+    return `(${clean}`;
+  }
+  if (clean.length <= 6) {
+    return `(${clean.substring(0, 2)}) ${clean.substring(2)}`;
+  }
+  if (clean.length <= 10) {
+    return `(${clean.substring(0, 2)}) ${clean.substring(2, 6)}-${clean.substring(6)}`;
+  }
+  return `(${clean.substring(0, 2)}) ${clean.substring(2, 7)}-${clean.substring(7, 11)}`;
+};
