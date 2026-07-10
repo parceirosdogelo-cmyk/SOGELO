@@ -331,7 +331,8 @@ export const MOCK_PERFIS: Perfil[] = [
   { id: 'socio-mauro', nome: 'Mauro', telefone: '22992360437', role: 'socio', senha: '12345' },
   { id: 'socio-marcos', nome: 'Marcos', telefone: '22996213001', role: 'socio', senha: '12345' },
   { id: 'vendedor-roberto', nome: 'Roberto Silva', telefone: '22999991111', role: 'vendedor', senha: 'vendas123' },
-  { id: 'entregador-carlos', nome: 'Carlos Entregador', telefone: '22999992222', role: 'entregador', senha: 'entrega123' }
+  { id: 'entregador-carlos', nome: 'Carlos Entregador', telefone: '22999992222', role: 'entregador', senha: 'entrega123' },
+  { id: 'emp-1783683916200', nome: 'IGOR TEIXEIRA', telefone: '22991052928', role: 'vendedor', senha: '0101' }
 ];
 
 export const MOCK_INVESTIMENTOS: InvestimentoFrota[] = [

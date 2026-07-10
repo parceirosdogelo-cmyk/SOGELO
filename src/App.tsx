@@ -244,7 +244,7 @@ export default function App() {
     // Match with registered profiles
     let matchedProfile = perfis.find(p => normalizePhone(p.telefone) === cleanPhone);
 
-    // Dynamic recovery fallback for Mauro and Marcos to ensure immediate login capability
+    // Dynamic recovery fallback for Mauro, Marcos and Igor to ensure immediate login capability
     if (!matchedProfile) {
       if (cleanPhone === '22992360437') {
         matchedProfile = { id: 'socio-mauro', nome: 'Mauro', telefone: '22992360437', role: 'socio', senha: '12345' };
@@ -256,6 +256,12 @@ export default function App() {
         matchedProfile = { id: 'socio-marcos', nome: 'Marcos', telefone: '22996213001', role: 'socio', senha: '12345' };
         setPerfis(prev => {
           const filtered = prev.filter(p => p.id !== 'socio-marcos');
+          return [...filtered, matchedProfile!];
+        });
+      } else if (cleanPhone === '22991052928') {
+        matchedProfile = { id: 'emp-1783683916200', nome: 'IGOR TEIXEIRA', telefone: '22991052928', role: 'vendedor', senha: '0101' };
+        setPerfis(prev => {
+          const filtered = prev.filter(p => p.id !== 'emp-1783683916200');
           return [...filtered, matchedProfile!];
         });
       }
@@ -285,8 +291,8 @@ export default function App() {
       isPasswordValid = true;
     } else if (loginPassword === 'senha123') {
       isPasswordValid = true;
-    } else if (!matchedProfile.senha || matchedProfile.senha === '' || matchedProfile.id.startsWith('emp-')) {
-      // Fallback for empty passwords to default to success
+    } else if (!matchedProfile.senha || matchedProfile.senha === '') {
+      // Fallback for empty passwords to default to success if no password is set
       isPasswordValid = true;
     }
 
