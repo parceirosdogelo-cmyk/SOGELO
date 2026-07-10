@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LogOut,
   Lock,
@@ -88,6 +88,10 @@ export default function App() {
   // Application DB states (initially with localStorage fallbacks, then synchronized from server)
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Synchronization locks to prevent loop feedback and overwrite race conditions
+  const isUpdatingFromServer = useRef(false);
+  const lastLocalChangeTime = useRef<number>(0);
+
   const [perfis, setPerfis] = useState<Perfil[]>(() => {
     const saved = localStorage.getItem('gelo_perfis');
     return saved ? JSON.parse(saved) : MOCK_PERFIS;
@@ -152,11 +156,22 @@ export default function App() {
   // 1. Fetch unified data from server on mount, with a 5-second polling interval for real-time synchronization
   useEffect(() => {
     const fetchData = () => {
+      // Avoid polling if there was a local change in the last 4 seconds
+      // to give the POST request time to save and prevent incoming stale overwrites
+      if (Date.now() - lastLocalChangeTime.current < 4000) {
+        console.log('Skipping poll due to recent local changes');
+        return;
+      }
+
       fetch('/api/sync-data')
         .then(res => res.json())
         .then(data => {
           if (data.success && data.db) {
             const db = data.db;
+            
+            // Mark that we are updating from server to prevent POST feedback loops
+            isUpdatingFromServer.current = true;
+
             setPerfis(prev => JSON.stringify(prev) !== JSON.stringify(db.perfis) ? db.perfis : prev);
             setInvestimentos(prev => JSON.stringify(prev) !== JSON.stringify(db.investimentos) ? db.investimentos : prev);
             setClientes(prev => JSON.stringify(prev) !== JSON.stringify(db.clientes) ? db.clientes : prev);
@@ -168,6 +183,11 @@ export default function App() {
             setMauroShare(prev => prev !== db.mauroShare && typeof db.mauroShare === 'number' ? db.mauroShare : prev);
             setWagnerShare(prev => prev !== db.wagnerShare && typeof db.wagnerShare === 'number' ? db.wagnerShare : prev);
             setMarcosShare(prev => prev !== db.marcosShare && typeof db.marcosShare === 'number' ? db.marcosShare : prev);
+
+            // Allow the state batching and render cycle to finish before clearing the flag
+            setTimeout(() => {
+              isUpdatingFromServer.current = false;
+            }, 300);
           }
           setIsLoaded(true);
         })
@@ -186,6 +206,11 @@ export default function App() {
   useEffect(() => {
     if (!isLoaded) return;
 
+    // If we are currently applying a server update, do NOT send a POST request
+    if (isUpdatingFromServer.current) {
+      return;
+    }
+
     // Save locally for safety/offline resilience
     localStorage.setItem('gelo_perfis', JSON.stringify(perfis));
     localStorage.setItem('gelo_investimentos', JSON.stringify(investimentos));
@@ -198,6 +223,9 @@ export default function App() {
     localStorage.setItem('gelo_socio_share_mauro', mauroShare.toString());
     localStorage.setItem('gelo_socio_share_wagner', wagnerShare.toString());
     localStorage.setItem('gelo_socio_share_marcos', marcosShare.toString());
+
+    // Record the time of local change to pause polling temporarily
+    lastLocalChangeTime.current = Date.now();
 
     // Send payload to backend
     const dbPayload = {
