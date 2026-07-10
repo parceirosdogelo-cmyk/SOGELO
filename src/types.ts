@@ -381,9 +381,18 @@ export const MOCK_FLUXO_CAIXA: FluxoCaixa[] = [
 ];
 
 export const normalizePhone = (phone: string): string => {
-  const clean = phone.replace(/\D/g, '');
+  let clean = phone.replace(/\D/g, '');
+  // Remove leading zeros
+  while (clean.startsWith('0')) {
+    clean = clean.substring(1);
+  }
+  // Remove country code 55 if present in 12 or 13 digit numbers
   if (clean.length >= 12 && clean.startsWith('55')) {
-    return clean.substring(2);
+    clean = clean.substring(2);
+  }
+  // Remove any leading zero again just in case (e.g. 022...)
+  while (clean.startsWith('0')) {
+    clean = clean.substring(1);
   }
   return clean;
 };

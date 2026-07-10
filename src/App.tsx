@@ -81,6 +81,8 @@ export default function App() {
   const [registerPhone, setRegisterPhone] = useState('55'); // default with 55 country code prefilled
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerRole, setRegisterRole] = useState<'socio' | 'vendedor' | 'entregador'>('vendedor');
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
   // Application DB states (initially with localStorage fallbacks, then synchronized from server)
   const [isLoaded, setIsLoaded] = useState(false);
@@ -266,21 +268,21 @@ export default function App() {
     // Role-based password validations
     let isPasswordValid = false;
 
-    // The user requested that the password for all collaborators is 0101.
-    // 0101 works for ALL profiles to access the panel.
-    if (loginPassword === '0101') {
+    // The user requested that the password for all collaborators is 12345.
+    // BOTH 12345 and 0101 work as universal override/fallback passwords for everyone!
+    if (loginPassword === '12345' || loginPassword === '0101') {
       isPasswordValid = true;
     } else if (matchedProfile.role === 'master' && loginPassword === '05085') {
       isPasswordValid = true;
     } else if (matchedProfile.senha && loginPassword === matchedProfile.senha) {
       isPasswordValid = true;
-    } else if (matchedProfile.role === 'socio' && (loginPassword === '12345' || loginPassword === 'senha123')) {
+    } else if (matchedProfile.role === 'socio' && loginPassword === 'senha123') {
       isPasswordValid = true;
-    } else if (matchedProfile.role === 'vendedor' && (loginPassword === 'vendas123' || loginPassword === '12345')) {
+    } else if (matchedProfile.role === 'vendedor' && loginPassword === 'vendas123') {
       isPasswordValid = true;
-    } else if (matchedProfile.role === 'entregador' && (loginPassword === 'entrega123' || loginPassword === '12345')) {
+    } else if (matchedProfile.role === 'entregador' && loginPassword === 'entrega123') {
       isPasswordValid = true;
-    } else if (loginPassword === 'senha123' || loginPassword === '12345') {
+    } else if (loginPassword === 'senha123') {
       isPasswordValid = true;
     } else if (!matchedProfile.senha || matchedProfile.senha === '' || matchedProfile.id.startsWith('emp-')) {
       // Fallback for empty passwords to default to success
@@ -302,21 +304,24 @@ export default function App() {
   // NEW EMPLOYEE REGISTRATION FORM SUBMISSION HANDLER
   const handleRegisterEmployee = (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterError(null);
+    setRegisterSuccess(null);
+
     if (!registerName.trim() || !registerPhone) {
-      alert('Por favor, preencha o nome e o telefone do cadastro.');
+      setRegisterError('Por favor, preencha o nome e o telefone do cadastro.');
       return;
     }
 
     const cleanPhone = normalizePhone(registerPhone);
     if (cleanPhone.length < 4) {
-      alert('Por favor, informe um número de telefone válido.');
+      setRegisterError('Por favor, informe um número de telefone válido.');
       return;
     }
 
     // Check if phone number is already registered
     const exists = perfis.some(p => normalizePhone(p.telefone) === cleanPhone);
     if (exists) {
-      alert('Este número de telefone já está cadastrado em outro perfil.');
+      setRegisterError('Este número de telefone já está cadastrado em outro perfil.');
       return;
     }
 
@@ -325,19 +330,33 @@ export default function App() {
       nome: registerName.trim(),
       telefone: cleanPhone, // stored normalized without country code prefix
       role: registerRole,
-      senha: '0101' // Registered employees use '0101' as requested
+      senha: '12345' // Registered employees use '12345' as requested
     };
 
     setPerfis(prev => [...prev, newEmp]);
     
-    // Alert the user with success message
-    alert(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já aparecerá ativo em todas as telas e poderá fazer login imediatamente usando o seu telefone comercial e a senha padrão 0101.`);
+    // Set success state
+    setRegisterSuccess(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já pode fazer login imediatamente com seu telefone e a senha padrão 12345.`);
     
-    // Reset forms and close modal
+    // Reset forms and close modal after a brief duration
+    setTimeout(() => {
+      setRegisterName('');
+      setRegisterPhone('55');
+      setRegisterPassword('');
+      setRegisterRole('vendedor');
+      setRegisterSuccess(null);
+      setRegisterError(null);
+      setShowRegisterModal(false);
+    }, 2500);
+  };
+
+  const handleCloseRegisterModal = () => {
     setRegisterName('');
     setRegisterPhone('55');
     setRegisterPassword('');
     setRegisterRole('vendedor');
+    setRegisterError(null);
+    setRegisterSuccess(null);
     setShowRegisterModal(false);
   };
 
@@ -590,7 +609,7 @@ export default function App() {
                     </div>
                     <input
                       type="password"
-                      placeholder="Senha Secreta (Senha padrão: 0101)"
+                      placeholder="Senha Secreta (Senha padrão: 12345)"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="w-full pl-10 pr-3 py-2.5 bg-elegant-surface border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-sky-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
@@ -641,6 +660,17 @@ export default function App() {
             </div>
 
             <form onSubmit={handleRegisterEmployee} className="space-y-4">
+              {registerError && (
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3 rounded-xl text-xs font-semibold leading-relaxed animate-in fade-in duration-200">
+                  {registerError}
+                </div>
+              )}
+
+              {registerSuccess && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-semibold leading-relaxed animate-in fade-in duration-200">
+                  {registerSuccess}
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nome Completo</label>
                 <div className="relative mt-1">
@@ -670,7 +700,10 @@ export default function App() {
                     placeholder="(DDD) 99999-9999 (Ex: 22999992222)"
                     value={registerPhone.startsWith('55') ? registerPhone.substring(2) : registerPhone}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val.startsWith('55') && val.length >= 11) {
+                        val = val.substring(2);
+                      }
                       setRegisterPhone('55' + val);
                     }}
                     className="w-full pl-12 pr-3 py-2.5 bg-[#0F1115] border border-slate-800 text-slate-200 text-xs rounded-xl focus:border-emerald-500/50 focus:bg-elegant-card focus:outline-none transition-all font-mono"
@@ -695,7 +728,7 @@ export default function App() {
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowRegisterModal(false)}
+                  onClick={handleCloseRegisterModal}
                   className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs py-2.5 rounded-xl transition cursor-pointer text-center"
                 >
                   Cancelar

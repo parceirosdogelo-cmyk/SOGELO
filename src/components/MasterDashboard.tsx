@@ -213,6 +213,8 @@ export default function MasterDashboard({
     telefone: '',
     role: 'vendedor' as 'vendedor' | 'entregador' | 'socio'
   });
+  const [employeeError, setEmployeeError] = useState<string | null>(null);
+  const [employeeSuccess, setEmployeeSuccess] = useState<string | null>(null);
 
   const [newClient, setNewClient] = useState({
     nome_estabelecimento: '',
@@ -457,17 +459,28 @@ export default function MasterDashboard({
   const handleAddEmployee = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSocio) return; // Sócio cannot manage employees
-    if (!newEmployee.nome || !newEmployee.telefone) return;
+    setEmployeeError(null);
+    setEmployeeSuccess(null);
 
-    const cleanPhone = normalizePhone(newEmployee.telefone);
+    if (!newEmployee.nome || !newEmployee.telefone) {
+      setEmployeeError('Por favor, preencha o nome e o telefone.');
+      return;
+    }
+
+    let phoneInput = newEmployee.telefone.replace(/\D/g, '');
+    if (phoneInput.startsWith('55') && phoneInput.length >= 11) {
+      phoneInput = phoneInput.substring(2);
+    }
+
+    const cleanPhone = normalizePhone(phoneInput);
     if (cleanPhone.length < 4) {
-      alert('Por favor, insira um telefone válido.');
+      setEmployeeError('Por favor, insira um telefone válido com DDD.');
       return;
     }
 
     const exists = perfis.some(p => normalizePhone(p.telefone) === cleanPhone);
     if (exists) {
-      alert('Este número de telefone já está cadastrado em outro perfil.');
+      setEmployeeError('Este número de telefone já está cadastrado em outro perfil.');
       return;
     }
 
@@ -476,12 +489,18 @@ export default function MasterDashboard({
       nome: newEmployee.nome.trim(),
       telefone: cleanPhone,
       role: newEmployee.role,
-      senha: '0101' // Default password for newly added employees
+      senha: '12345' // Default password for newly added employees (as requested)
     };
 
     setPerfis(prev => [...prev, emp]);
+    setEmployeeSuccess(`Funcionário ${emp.nome} cadastrado com sucesso!`);
     setNewEmployee({ nome: '', telefone: '', role: 'vendedor' });
-    alert(`Funcionário ${emp.nome} cadastrado com sucesso!`);
+
+    // Clear feedback messages after 3 seconds
+    setTimeout(() => {
+      setEmployeeSuccess(null);
+      setEmployeeError(null);
+    }, 3000);
   };
 
   const handleAddClient = (e: React.FormEvent) => {
@@ -1315,6 +1334,18 @@ export default function MasterDashboard({
             <div className="bg-elegant-card p-5 rounded-2xl border border-slate-800 shadow-sm">
               <h3 className="font-bold text-white text-sm mb-3">Registrar Novo Funcionário</h3>
               <form onSubmit={handleAddEmployee} className="space-y-3">
+                {employeeError && (
+                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-2.5 rounded-lg text-xs font-semibold leading-relaxed animate-in fade-in duration-200">
+                    {employeeError}
+                  </div>
+                )}
+
+                {employeeSuccess && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold leading-relaxed animate-in fade-in duration-200">
+                    {employeeSuccess}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase">Nome Completo</label>
                   <input
@@ -1353,7 +1384,7 @@ export default function MasterDashboard({
                 </div>
 
                 <div className="bg-[#0F1115] p-3 rounded-lg border border-slate-800 text-[10px] text-slate-400 leading-normal">
-                  <span className="font-bold text-slate-200">Nota de Segurança:</span> A senha inicial padrão para novos colaboradores registrados pelo administrador é a senha simples "senha123". Eles poderão usá-la imediatamente para fazer o login no aplicativo.
+                  <span className="font-bold text-slate-200">Nota de Segurança:</span> A senha inicial padrão para novos colaboradores registrados pelo administrador é a senha simples "12345". Eles poderão usá-la imediatamente para fazer o login no aplicativo.
                 </div>
 
                 <button
