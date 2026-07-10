@@ -89,9 +89,9 @@ export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Synchronization locks to prevent loop feedback and overwrite race conditions
-  const isUpdatingFromServer = useRef(false);
   const lastLocalChangeTime = useRef<number>(0);
   const latestDbState = useRef<any>(null);
+  const lastServerData = useRef<string>('');
 
   const [perfis, setPerfis] = useState<Perfil[]>(() => {
     const saved = localStorage.getItem('gelo_perfis');
@@ -183,7 +183,7 @@ export default function App() {
     marcosShare
   ]);
 
-  // 1. Fetch unified data from server on mount, with a 5-second polling interval for real-time synchronization
+  // 1. Fetch unified data from server on mount, with a 4-second polling interval for real-time synchronization
   useEffect(() => {
     const fetchData = () => {
       // Avoid polling if there was a local change in the last 4 seconds
@@ -193,51 +193,39 @@ export default function App() {
         return;
       }
 
-      const currentLocal = latestDbState.current;
-      if (!currentLocal) {
-        return;
-      }
-
       fetch('/api/sync-data')
         .then(res => res.json())
         .then(data => {
           if (data.success && data.db) {
             const db = data.db;
-            
-            // Check if there is any actual difference between current local state and server data
-            const hasChanges = 
-              JSON.stringify(currentLocal.perfis) !== JSON.stringify(db.perfis) ||
-              JSON.stringify(currentLocal.investimentos) !== JSON.stringify(db.investimentos) ||
-              JSON.stringify(currentLocal.clientes) !== JSON.stringify(db.clientes) ||
-              JSON.stringify(currentLocal.produtos) !== JSON.stringify(db.produtos) ||
-              JSON.stringify(currentLocal.pedidos) !== JSON.stringify(db.pedidos) ||
-              JSON.stringify(currentLocal.itensPedido) !== JSON.stringify(db.itensPedido) ||
-              JSON.stringify(currentLocal.fluxoCaixa) !== JSON.stringify(db.fluxoCaixa) ||
-              JSON.stringify(currentLocal.aportes) !== JSON.stringify(db.aportes) ||
-              currentLocal.mauroShare !== db.mauroShare ||
-              currentLocal.wagnerShare !== db.wagnerShare ||
-              currentLocal.marcosShare !== db.marcosShare;
+            const dbStr = JSON.stringify(db);
 
-            if (hasChanges) {
-              console.log('Server has new data, updating local state...');
-              isUpdatingFromServer.current = true;
+            // Compare incoming server data with the last server data we processed,
+            // as well as our current local state.
+            const currentLocal = latestDbState.current;
+            if (currentLocal) {
+              const currentLocalStr = JSON.stringify(currentLocal);
+              
+              // Only apply if the server has different data from our current local state,
+              // AND it is different from the last server data we recorded (to avoid redundant renders)
+              if (dbStr !== currentLocalStr && dbStr !== lastServerData.current) {
+                console.log('Server has new data, updating local state...');
+                
+                // Store the raw string of the server data to skip the next POST synchronization effect
+                lastServerData.current = dbStr;
 
-              setPerfis(db.perfis);
-              setInvestimentos(db.investimentos);
-              setClientes(db.clientes);
-              setProdutos(db.produtos);
-              setPedidos(db.pedidos);
-              setItensPedido(db.itensPedido);
-              setFluxoCaixa(db.fluxoCaixa);
-              setAportes(db.aportes);
-              setMauroShare(db.mauroShare);
-              setWagnerShare(db.wagnerShare);
-              setMarcosShare(db.marcosShare);
-
-              // Clear lock fallback after 1 second to ensure lock is released
-              setTimeout(() => {
-                isUpdatingFromServer.current = false;
-              }, 1000);
+                setPerfis(db.perfis);
+                setInvestimentos(db.investimentos);
+                setClientes(db.clientes);
+                setProdutos(db.produtos);
+                setPedidos(db.pedidos);
+                setItensPedido(db.itensPedido);
+                setFluxoCaixa(db.fluxoCaixa);
+                setAportes(db.aportes);
+                setMauroShare(db.mauroShare);
+                setWagnerShare(db.wagnerShare);
+                setMarcosShare(db.marcosShare);
+              }
             }
           }
           setIsLoaded(true);
@@ -249,7 +237,7 @@ export default function App() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 4000); // Poll every 4 seconds for a tighter real-time synchronization feeling
     return () => clearInterval(interval);
   }, []);
 
@@ -257,9 +245,27 @@ export default function App() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    // If we are currently applying a server update, do NOT send a POST request
-    if (isUpdatingFromServer.current) {
-      isUpdatingFromServer.current = false; // Reset the flag immediately upon consume
+    // Calculate current DB payload
+    const dbPayload = {
+      perfis,
+      investimentos,
+      clientes,
+      produtos,
+      pedidos,
+      itensPedido,
+      fluxoCaixa,
+      aportes,
+      mauroShare,
+      wagnerShare,
+      marcosShare
+    };
+
+    const payloadStr = JSON.stringify(dbPayload);
+
+    // If the local state is exactly identical to what we last received from the server,
+    // do NOT send a POST request. This completely avoids feedback loops and race conditions!
+    if (payloadStr === lastServerData.current) {
+      console.log('Local state matches last server data, skipping POST sync.');
       return;
     }
 
@@ -279,21 +285,11 @@ export default function App() {
     // Record the time of local change to pause polling temporarily
     lastLocalChangeTime.current = Date.now();
 
-    // Send payload to backend
-    const dbPayload = {
-      perfis,
-      investimentos,
-      clientes,
-      produtos,
-      pedidos,
-      itensPedido,
-      fluxoCaixa,
-      aportes,
-      mauroShare,
-      wagnerShare,
-      marcosShare
-    };
+    // Since this is a new local user action, update lastServerData to prevent redundant POSTs,
+    // but allow the server to get the update.
+    lastServerData.current = payloadStr;
 
+    // Send payload to backend
     fetch('/api/sync-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
