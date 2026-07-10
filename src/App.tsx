@@ -154,6 +154,29 @@ export default function App() {
     return saved ? parseFloat(saved) : 33.34;
   });
 
+  const [investimentosCaixa, setInvestimentosCaixa] = useState<Array<{
+    id: string;
+    descricao: string;
+    valor: number;
+    data: string;
+  }>>(() => {
+    const saved = localStorage.getItem('gelo_investimentos_caixa');
+    return saved ? JSON.parse(saved) : [
+      { id: 'inv-c1', descricao: 'Compra de Câmara Fria Compacta para quiosques', valor: 8500, data: '2026-07-06' },
+      { id: 'inv-c2', descricao: 'Aquisição de moldes industriais para gelo em barra', valor: 3200, data: '2026-06-20' }
+    ];
+  });
+
+  const [caixaSaldo, setCaixaSaldo] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_caixa_aportes_saldo');
+    return saved ? parseFloat(saved) : 55000;
+  });
+
+  const [simulatedProfitOffset, setSimulatedProfitOffset] = useState<number>(() => {
+    const saved = localStorage.getItem('gelo_lucro_simulado_offset');
+    return saved ? parseFloat(saved) : 120000;
+  });
+
   // Flag to indicate active local user changes that need to be POSTed to the server
   const hasLocalChanges = useRef<boolean>(false);
 
@@ -202,6 +225,18 @@ export default function App() {
     hasLocalChanges.current = true;
     setMarcosShare(val);
   };
+  const updateInvestimentosCaixa = (val: any[] | ((prev: any[]) => any[])) => {
+    hasLocalChanges.current = true;
+    setInvestimentosCaixa(val);
+  };
+  const updateCaixaSaldo = (val: number | ((prev: number) => number)) => {
+    hasLocalChanges.current = true;
+    setCaixaSaldo(val);
+  };
+  const updateSimulatedProfitOffset = (val: number | ((prev: number) => number)) => {
+    hasLocalChanges.current = true;
+    setSimulatedProfitOffset(val);
+  };
 
   // Keep latestDbState ref updated with the absolute latest, unstale state of everything
   useEffect(() => {
@@ -216,7 +251,10 @@ export default function App() {
       aportes,
       mauroShare,
       wagnerShare,
-      marcosShare
+      marcosShare,
+      investimentosCaixa,
+      caixaSaldo,
+      simulatedProfitOffset
     };
   }, [
     perfis,
@@ -229,7 +267,10 @@ export default function App() {
     aportes,
     mauroShare,
     wagnerShare,
-    marcosShare
+    marcosShare,
+    investimentosCaixa,
+    caixaSaldo,
+    simulatedProfitOffset
   ]);
 
   // 1. Fetch unified data from server on mount, with a 4-second polling interval for real-time synchronization
@@ -273,6 +314,9 @@ export default function App() {
                 setMauroShare(db.mauroShare);
                 setWagnerShare(db.wagnerShare);
                 setMarcosShare(db.marcosShare);
+                if (db.investimentosCaixa) setInvestimentosCaixa(db.investimentosCaixa);
+                if (db.caixaSaldo !== undefined) setCaixaSaldo(db.caixaSaldo);
+                if (db.simulatedProfitOffset !== undefined) setSimulatedProfitOffset(db.simulatedProfitOffset);
               }
             }
           }
@@ -328,7 +372,10 @@ export default function App() {
       aportes,
       mauroShare,
       wagnerShare,
-      marcosShare
+      marcosShare,
+      investimentosCaixa,
+      caixaSaldo,
+      simulatedProfitOffset
     };
 
     const payloadStr = JSON.stringify(dbPayload);
@@ -345,6 +392,9 @@ export default function App() {
     localStorage.setItem('gelo_socio_share_mauro', mauroShare.toString());
     localStorage.setItem('gelo_socio_share_wagner', wagnerShare.toString());
     localStorage.setItem('gelo_socio_share_marcos', marcosShare.toString());
+    localStorage.setItem('gelo_investimentos_caixa', JSON.stringify(investimentosCaixa));
+    localStorage.setItem('gelo_caixa_aportes_saldo', caixaSaldo.toString());
+    localStorage.setItem('gelo_lucro_simulado_offset', simulatedProfitOffset.toString());
 
     // Record the time of local change to pause polling temporarily
     lastLocalChangeTime.current = Date.now();
@@ -371,7 +421,10 @@ export default function App() {
     aportes,
     mauroShare,
     wagnerShare,
-    marcosShare
+    marcosShare,
+    investimentosCaixa,
+    caixaSaldo,
+    simulatedProfitOffset
   ]);
 
   // LOGIN HANDLER
@@ -480,7 +533,7 @@ export default function App() {
       senha: '12345' // Registered employees use '12345' as requested
     };
 
-    setPerfis(prev => [...prev, newEmp]);
+    updatePerfis(prev => [...prev, newEmp]);
     
     // Set success state
     setRegisterSuccess(`Funcionário ${registerName.trim()} cadastrado com sucesso! Ele já pode fazer login imediatamente com seu telefone e a senha padrão 12345.`);
@@ -647,6 +700,12 @@ export default function App() {
                 setWagnerShare={updateWagnerShare}
                 marcosShare={marcosShare}
                 setMarcosShare={updateMarcosShare}
+                investimentosCaixa={investimentosCaixa}
+                setInvestimentosCaixa={updateInvestimentosCaixa}
+                caixaSaldo={caixaSaldo}
+                setCaixaSaldo={updateCaixaSaldo}
+                simulatedProfitOffset={simulatedProfitOffset}
+                setSimulatedProfitOffset={updateSimulatedProfitOffset}
               />
             )}
 
@@ -676,6 +735,12 @@ export default function App() {
                 setWagnerShare={updateWagnerShare}
                 marcosShare={marcosShare}
                 setMarcosShare={updateMarcosShare}
+                investimentosCaixa={investimentosCaixa}
+                setInvestimentosCaixa={updateInvestimentosCaixa}
+                caixaSaldo={caixaSaldo}
+                setCaixaSaldo={updateCaixaSaldo}
+                simulatedProfitOffset={simulatedProfitOffset}
+                setSimulatedProfitOffset={updateSimulatedProfitOffset}
               />
             )}
 

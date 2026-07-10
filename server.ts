@@ -53,7 +53,13 @@ function readDb() {
     ],
     mauroShare: 33.33,
     wagnerShare: 33.33,
-    marcosShare: 33.34
+    marcosShare: 33.34,
+    investimentosCaixa: [
+      { id: 'inv-c1', descricao: 'Compra de Câmara Fria Compacta para quiosques', valor: 8500, data: '2026-07-06' },
+      { id: 'inv-c2', descricao: 'Aquisição de moldes industriais para gelo em barra', valor: 3200, data: '2026-06-20' }
+    ],
+    caixaSaldo: 55000,
+    simulatedProfitOffset: 120000
   };
 
   try {

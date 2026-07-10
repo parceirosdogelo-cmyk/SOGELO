@@ -99,6 +99,22 @@ interface MasterDashboardProps {
   setWagnerShare: React.Dispatch<React.SetStateAction<number>>;
   marcosShare: number;
   setMarcosShare: React.Dispatch<React.SetStateAction<number>>;
+  investimentosCaixa: Array<{
+    id: string;
+    descricao: string;
+    valor: number;
+    data: string;
+  }>;
+  setInvestimentosCaixa: React.Dispatch<React.SetStateAction<Array<{
+    id: string;
+    descricao: string;
+    valor: number;
+    data: string;
+  }>>>;
+  caixaSaldo: number;
+  setCaixaSaldo: React.Dispatch<React.SetStateAction<number>>;
+  simulatedProfitOffset: number;
+  setSimulatedProfitOffset: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function MasterDashboard({
@@ -126,6 +142,12 @@ export default function MasterDashboard({
   setWagnerShare,
   marcosShare,
   setMarcosShare,
+  investimentosCaixa,
+  setInvestimentosCaixa,
+  caixaSaldo,
+  setCaixaSaldo,
+  simulatedProfitOffset,
+  setSimulatedProfitOffset,
 }: MasterDashboardProps) {
   const [activeTab, setActiveTab] = useState<'finance' | 'ai' | 'fleet' | 'products' | 'employees' | 'clients' | 'socios' | 'vender'>('finance');
   const [preselectedVendedorId, setPreselectedVendedorId] = useState<string | undefined>(undefined);
@@ -133,44 +155,6 @@ export default function MasterDashboard({
   // Partners Fund & Contribution types and states
   // We define these types inline or use them in our states
   // Mauro, Wagner and Marcos are our partners
-
-  const [investimentosCaixa, setInvestimentosCaixa] = useState<Array<{
-    id: string;
-    descricao: string;
-    valor: number;
-    data: string;
-  }>>(() => {
-    const saved = localStorage.getItem('gelo_investimentos_caixa');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: 'inv-c1', descricao: 'Compra de Câmara Fria Compacta para quiosques', valor: 8500, data: '2026-07-06' },
-      { id: 'inv-c2', descricao: 'Aquisição de moldes industriais para gelo em barra', valor: 3200, data: '2026-06-20' }
-    ];
-  });
-
-  const [caixaSaldo, setCaixaSaldo] = useState<number>(() => {
-    const saved = localStorage.getItem('gelo_caixa_aportes_saldo');
-    return saved ? parseFloat(saved) : 55000;
-  });
-
-  const [simulatedProfitOffset, setSimulatedProfitOffset] = useState<number>(() => {
-    const saved = localStorage.getItem('gelo_lucro_simulado_offset');
-    return saved ? parseFloat(saved) : 120000; // Default offset of 120k for demo
-  });
-
-  // State sync effects
-
-  React.useEffect(() => {
-    localStorage.setItem('gelo_investimentos_caixa', JSON.stringify(investimentosCaixa));
-  }, [investimentosCaixa]);
-
-  React.useEffect(() => {
-    localStorage.setItem('gelo_caixa_aportes_saldo', JSON.stringify(caixaSaldo));
-  }, [caixaSaldo]);
-
-  React.useEffect(() => {
-    localStorage.setItem('gelo_lucro_simulado_offset', JSON.stringify(simulatedProfitOffset));
-  }, [simulatedProfitOffset]);
 
   // Partners specific form inputs
   const [mauroPercent, setMauroPercent] = useState('10');
