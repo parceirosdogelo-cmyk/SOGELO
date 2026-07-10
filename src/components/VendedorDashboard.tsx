@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Cliente, Produto, Pedido, ItemPedido, Perfil } from '../types';
 import MapRioOstras from './MapRioOstras';
+import SalesHistoryTabs from './SalesHistoryTabs';
 
 interface VendedorDashboardProps {
   clientes: Cliente[];
@@ -149,7 +150,8 @@ export default function VendedorDashboard({
       data_pedido: new Date().toISOString(),
       valor_total: orderTotal,
       status: 'Pendente',
-      forma_pagamento: formaPagamento
+      forma_pagamento: formaPagamento,
+      pago: formaPagamento !== 'A Combinar'
     };
 
     // Create item records & update product stock counts
@@ -295,7 +297,7 @@ export default function VendedorDashboard({
       {vendedorTab === 'orders' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-white text-sm">Painel de Pedidos Ativos</h3>
+            <h3 className="font-bold text-white text-sm">Painel de Histórico de Vendas</h3>
             <button
               onClick={() => setVendedorTab('new-order')}
               className="flex items-center gap-1 text-xs font-bold text-sky-400 hover:text-sky-300 cursor-pointer"
@@ -304,42 +306,15 @@ export default function VendedorDashboard({
             </button>
           </div>
 
-          <div className="space-y-3">
-            {pedidos.map(p => {
-              const cli = clientes.find(c => c.id === p.cliente_id);
-              const driver = perfis.find(prof => prof.id === p.entregador_id);
-              
-              return (
-                <div key={p.id} className="bg-elegant-card p-4 rounded-2xl border border-slate-800 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-slate-500 font-semibold">ID: {p.id.split('-')[1] || p.id}</span>
-                      <span className={`px-2 py-0.5 rounded-sm text-[9px] font-bold ${p.status === 'Entregue' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : p.status === 'Em Rota' ? 'bg-sky-500/15 text-sky-400 border border-sky-500/20' : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'}`}>
-                        {p.status}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
-                      <Building className="h-4 w-4 text-sky-400" />
-                      {cli?.nome_estabelecimento || 'Estabelecimento Excluido'}
-                    </h4>
-                    <p className="text-[10px] text-slate-400">{cli?.endereco}</p>
-                    {driver && (
-                      <p className="text-[10px] text-indigo-400 font-semibold flex items-center gap-1">
-                        <Truck className="h-3.5 w-3.5" /> Entregador: {driver.nome}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="sm:text-right self-stretch sm:self-center flex sm:flex-col justify-between items-center sm:items-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800/60">
-                    <span className="text-xs text-slate-400 font-medium">Faturado em {p.forma_pagamento}</span>
-                    <h4 className="font-extrabold text-white text-sm mt-0.5">
-                      R$ {p.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </h4>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <SalesHistoryTabs
+            pedidos={pedidos}
+            setPedidos={setPedidos}
+            clientes={clientes}
+            perfis={perfis}
+            itensPedido={itensPedido}
+            produtos={produtos}
+            currentRole="vendedor"
+          />
         </div>
       )}
 

@@ -57,6 +57,7 @@ import {
   normalizePhone
 } from '../types';
 import VenderForm from './VenderForm';
+import SalesHistoryTabs from './SalesHistoryTabs';
 
 interface MasterDashboardProps {
   perfis: Perfil[];
@@ -2165,64 +2166,19 @@ export default function MasterDashboard({
                           Histórico de Vendas Detalhado
                         </h4>
                         <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full font-bold">
-                          Faturamento por Canal
+                          Faturamento e Logística
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-400">Auditoria completa dos pedidos faturados no sistema de Rio das Ostras.</p>
-
-                      <div className="overflow-y-auto max-h-[380px] rounded-xl border border-slate-850">
-                        {pedidos.length > 0 ? (
-                          <table className="w-full text-left border-collapse text-xs">
-                            <thead>
-                              <tr className="bg-[#0F1115] border-b border-slate-800/80 text-slate-500 font-bold">
-                                <th className="p-3">Data</th>
-                                <th className="p-3">Estabelecimento / Cliente</th>
-                                <th className="p-3">Vendedor / Sócio</th>
-                                <th className="p-3">Quantidade</th>
-                                <th className="p-3 text-right">Valor Total</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-850/50 text-slate-300">
-                              {pedidos.map(p => {
-                                const cli = clientes.find(c => c.id === p.cliente_id);
-                                const profile = perfis.find(prof => prof.id === p.vendedor_id || prof.nome === p.vendedor_id);
-                                const name = profile ? profile.nome : p.vendedor_id;
-                                const totalBags = itensPedido
-                                  .filter(item => item.pedido_id === p.id)
-                                  .reduce((sum, item) => sum + item.quantidade, 0);
-
-                                return (
-                                  <tr key={p.id} className="hover:bg-slate-800/25">
-                                    <td className="p-3 font-mono text-[10px]">
-                                      {new Date(p.data_pedido).toLocaleDateString('pt-BR')} {new Date(p.data_pedido).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                    </td>
-                                    <td className="p-3 font-semibold text-white">
-                                      {cli?.nome_estabelecimento || 'Estabelecimento Excluído'}
-                                    </td>
-                                    <td className="p-3">
-                                      <span className="flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                                        {name}
-                                      </span>
-                                    </td>
-                                    <td className="p-3 font-semibold text-slate-400">
-                                      {totalBags} un
-                                    </td>
-                                    <td className="p-3 text-right font-black text-emerald-400">
-                                      R$ {p.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <div className="p-8 text-center text-slate-500 text-xs bg-[#0F1115]/50">
-                            Nenhuma venda faturada encontrada no sistema.
-                          </div>
-                        )}
-                      </div>
+                      <SalesHistoryTabs
+                        pedidos={pedidos}
+                        setPedidos={setPedidos}
+                        clientes={clientes}
+                        perfis={perfis}
+                        itensPedido={itensPedido}
+                        produtos={produtos}
+                        currentRole={isSocio ? 'socio' : 'master'}
+                      />
                     </div>
                   </div>
                 </div>

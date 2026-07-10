@@ -155,7 +155,8 @@ export default function VenderForm({
       data_pedido: new Date().toISOString(),
       valor_total: orderTotal,
       status: 'Pendente',
-      forma_pagamento: formaPagamento
+      forma_pagamento: formaPagamento,
+      pago: formaPagamento !== 'A Combinar'
     };
 
     // Create item records

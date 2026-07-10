@@ -49,6 +49,7 @@ export interface Pedido {
   valor_total: number;
   status: 'Pendente' | 'Em Rota' | 'Entregue' | 'Cancelado';
   forma_pagamento: 'Pix' | 'Dinheiro' | 'Cartão' | 'A Combinar';
+  pago?: boolean;
 }
 
 export interface ItemPedido {
@@ -356,10 +357,10 @@ export const MOCK_PRODUTOS: Produto[] = [
 ];
 
 export const MOCK_PEDIDOS: Pedido[] = [
-  { id: 'ped-1', cliente_id: 'cli-1', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-08T10:00:00Z', valor_total: 160.00, status: 'Entregue', forma_pagamento: 'Pix' },
-  { id: 'ped-2', cliente_id: 'cli-2', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-08T11:30:00Z', valor_total: 600.00, status: 'Entregue', forma_pagamento: 'Dinheiro' },
-  { id: 'ped-3', cliente_id: 'cli-3', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-09T08:00:00Z', valor_total: 240.00, status: 'Pendente', forma_pagamento: 'Pix' },
-  { id: 'ped-4', cliente_id: 'cli-4', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-09T08:30:00Z', valor_total: 400.00, status: 'Pendente', forma_pagamento: 'A Combinar' }
+  { id: 'ped-1', cliente_id: 'cli-1', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-08T10:00:00Z', valor_total: 160.00, status: 'Entregue', forma_pagamento: 'Pix', pago: true },
+  { id: 'ped-2', cliente_id: 'cli-2', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-08T11:30:00Z', valor_total: 600.00, status: 'Entregue', forma_pagamento: 'Dinheiro', pago: true },
+  { id: 'ped-3', cliente_id: 'cli-3', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-09T08:00:00Z', valor_total: 240.00, status: 'Pendente', forma_pagamento: 'Pix', pago: false },
+  { id: 'ped-4', cliente_id: 'cli-4', vendedor_id: 'vendedor-roberto', entregador_id: 'entregador-carlos', data_pedido: '2026-07-09T08:30:00Z', valor_total: 400.00, status: 'Pendente', forma_pagamento: 'A Combinar', pago: false }
 ];
 
 export const MOCK_ITENS_PEDIDO: ItemPedido[] = [
